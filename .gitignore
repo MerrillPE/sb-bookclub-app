@@ -29,3 +29,6 @@ instance/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Personal local reference notes (not part of the project)
+.scratch/
