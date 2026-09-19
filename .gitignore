@@ -1,0 +1,31 @@
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Python bytecode/cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment variables / secrets
+.env
+.flaskenv
+
+# Flask instance folder (local config, SQLite db if stored here)
+instance/
+
+# SQLite database files (if using SQLite locally)
+*.db
+*.sqlite
+*.sqlite3
+
+# Editor/OS cruft
+.vscode/
+.idea/
+.DS_Store
+
+# Test/coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
