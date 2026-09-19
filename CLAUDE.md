@@ -18,18 +18,19 @@ Book Club Tracker: a web app for a 4-person book club to track books read, log i
 - **Migrations**: Flask-Migrate
 - **Auth**: Flask-Login + Werkzeug's built-in password hashing. 4 member accounts are manually seeded — no self-registration flow.
 - **Forms**: Flask-WTF (validation + CSRF protection)
-- **Frontend**: Server-rendered Jinja2 templates + Tailwind CSS (CDN) or plain CSS — no separate frontend framework
+- **Frontend**: Server-rendered Jinja2 templates + Tailwind CSS, compiled via the **Tailwind CLI build** (not the Play CDN script — that generates CSS client-side at runtime, adding JS overhead and a flash of unstyled content, which is worse on mobile). No separate frontend framework.
+- **Stretch goal**: light JS interactivity (e.g. Alpine.js) for things like a mobile nav toggle or modals — not required for the core app
 - **Hosting**: Render or Railway
 - **Book metadata (optional)**: Open Library API for auto-filling cover/author
 
 ## Planned Data Model
 
 - **Member**: id, username, password_hash, display_name
-- **Book**: id, title, author, cover_url, genre, date_added, added_by (FK → Member), status (to-read / currently reading / finished / abandoned)
-- **Rating**: id, book_id (FK → Book), member_id (FK → Member), score, comment, date_rated
+- **Book**: id, title, author, cover_url, created_at (date added), added_by (FK → Member, required), picked_by (FK → Member, optional — whose turn/choice this book was), status (to-read / currently reading / finished / abandoned), reading_start_date, reading_end_date
+- **Rating**: id, book_id (FK → Book), member_id (FK → Member), score (1–5, half-star increments), comment, created_at (date rated) — unique constraint on (book_id, member_id)
 - **Meeting** *(optional, later)*: id, book_id (FK → Book), date, notes
 
-A member can only edit/delete their own rating. Book detail views should show all 4 members' ratings side by side plus the average.
+`added_by` and `picked_by` are separate fields (required vs. optional — see plan doc). `status` is an explicit column, not derived from the reading dates, so "abandoned" has a clean representation. A member can only edit/delete their own rating. Book detail views should show all 4 members' ratings side by side plus the average.
 
 ## Key Open Decisions
 
@@ -37,8 +38,7 @@ See `docs/sb-bookclub-app-plan.md` for full context. Resolve these consistently 
 
 1. Can anyone edit any book's metadata, or only the person who added it? *(suggested: anyone, keep it simple)*
 2. Can a member delete their own rating, or only edit it?
-3. Rating scale (1–5, 1–10, half-star increments) — decide before building Ratings, since it affects both schema and UI.
-4. SQLite vs. Postgres — SQLite needs a host with persistent disk.
+3. SQLite vs. Postgres — SQLite needs a host with persistent disk.
 
 ## Development Approach
 
