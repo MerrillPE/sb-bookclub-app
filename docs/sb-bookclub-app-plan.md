@@ -83,35 +83,35 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 ## 4. Task Breakdown
 
 ### Phase 0 — Setup
-- [ ] Init Flask project structure (app factory pattern recommended)
-- [ ] Set up SQLAlchemy + choose DB (SQLite to start, or Postgres)
-- [ ] Set up Flask-Migrate for schema migrations
-- [ ] Base Jinja template + Tailwind CLI build setup (compiled static CSS, not the Play CDN script)
+- [x] Init Flask project structure (app factory pattern recommended)
+- [x] Set up SQLAlchemy + choose DB (SQLite to start, or Postgres)
+- [x] Set up Flask-Migrate for schema migrations
+- [x] Base Jinja template + Tailwind CLI build setup (compiled static CSS, not the Play CDN script)
 
 ### Phase 1 — Auth
 - [x] Define `Member` model with hashed passwords
 - [x] Set up Flask-Login (user loader, login/logout routes)
-- [ ] Login page + form (Flask-WTF)
+- [x] Login page + form (Flask-WTF)
 - [x] `Invite` model
-- [ ] `flask create-invite` CLI command (generates a token, prints the link)
-- [ ] Invite-redemption route (`/auth/register/<token>`) + form — validates token exists/unused/unexpired, creates the `Member`, stamps `used_at`
-- [ ] `@login_required` on protected routes
+- [x] `flask create-invite` CLI command (generates a token, prints the link)
+- [x] Invite-redemption route (`/auth/register/<token>`) + form — validates token exists/unused/unexpired, creates the `Member`, stamps `used_at`
+- [x] `@login_required` on protected routes
 
 ### Phase 2 — Core CRUD
-- [ ] `Book` and `Rating` models + relationships
-- [ ] Add book route + form
-- [ ] Book list route/template
-- [ ] Book detail route/template (shows all ratings)
-- [ ] Edit/delete book routes
-- [ ] Add/edit/delete rating routes (scoped to current_user)
+- [x] `Book` and `Rating` models + relationships
+- [x] Add book route + form
+- [x] Book list route/template
+- [x] Book detail route/template (shows all ratings)
+- [x] Edit/delete book routes
+- [x] Add/edit rating route (scoped to current_user) — no delete route, per decision 2 above (edit-only, upserts in place rather than separate add/edit endpoints)
 
 ### Phase 3 — Views & Polish
 - [ ] Sorting/filtering query params on book list
-- [ ] Average rating calculation (model property or query aggregate)
-- [ ] Status badges/styling — `BookStatus` is stored by enum *name* (e.g. `TO_BE_READ`), not a human-readable string; templates need a label mapping rather than printing the raw name/value directly
-- [ ] Half-star rating display — `Rating.score` is a Float in 0.5 increments; render as full/half star icons rather than a raw number
-- [ ] Conditionally render optional fields — `picked_by`, `reading_start_date`, `reading_end_date` are all nullable; templates need graceful "not set" states (e.g. a to-read book has no reading dates yet, not every book has a picked_by)
-- [ ] Mobile-responsive pass
+- [x] Average rating calculation (`Book.average_rating` property)
+- [ ] Status badges/styling — label mapping is done (`Book.status_label` property, used in templates), but rendered as plain text, not styled badges yet
+- [ ] Half-star rating display — still prints the raw float (`{{ rating.score }}`), not rendered as star icons
+- [ ] Conditionally render optional fields — partially done: `picked_by` has a graceful "not set" state in `detail.html`, but `reading_start_date`/`reading_end_date` aren't displayed anywhere on the detail page yet (collected in the form, never shown)
+- [ ] Mobile-responsive pass — books templates are plain unstyled HTML so far, matching the auth templates' minimal style; no Tailwind classes applied yet
 
 ### Phase 4 — Nice-to-Haves
 - [ ] Open Library API integration for auto-fill (cover/author)

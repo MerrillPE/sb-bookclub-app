@@ -4,42 +4,39 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-This repository currently contains only a project plan (`docs/sb-bookclub-app-plan.md`) — no application code, dependency manifests, or config exist yet. There are no build, lint, or test commands to run until the project is scaffolded. When starting implementation, follow the tech stack and phased task breakdown below rather than introducing a different stack.
+Phases 0–2 of `docs/sb-bookclub-app-plan.md`'s task breakdown are complete: app factory setup, full invite-based auth, and full book/rating CRUD all work end-to-end. Phase 3 (styling/polish) and Phase 4 (nice-to-haves) have not been started. See `docs/sb-bookclub-app-plan.md` for the full checklist and `.scratch/` for step-by-step build notes (gitignored, personal reference only).
 
-## Project Overview
+## Commands
 
-Book Club Tracker: a web app for a 4-person book club to track books read, log individual ratings/comments, and browse reading history. Each member has their own login; data is shared/stored online across devices.
+- Run the dev server: `flask run` (reads `FLASK_APP`/`FLASK_DEBUG` from `.env` automatically via python-dotenv)
+- Apply schema changes: `flask db migrate -m "..."` then `flask db upgrade`
+- Generate a member invite link: `flask create-invite` (prints a token/path; prepend the host to visit it)
+- Rebuild Tailwind CSS after editing templates or classes: `npx @tailwindcss/cli -i ./app/static/src/input.css -o ./app/static/css/output.css --minify` (swap `--minify` for `--watch` during active template work — compiled CSS is committed to git, so forgetting to rebuild means styling changes silently don't appear)
+- No automated test suite exists yet. No linter/formatter is configured (pylint/black were discussed but never installed).
 
-## Planned Tech Stack
+## Architecture
 
-- **Framework**: Flask (app factory pattern)
-- **Database**: SQLite to start (or Postgres via Supabase/Neon if hosting requires it — watch for hosts with ephemeral disks if using SQLite)
-- **ORM**: SQLAlchemy via Flask-SQLAlchemy
-- **Migrations**: Flask-Migrate
-- **Auth**: Flask-Login + Werkzeug's built-in password hashing. 4 member accounts are manually seeded — no self-registration flow.
-- **Forms**: Flask-WTF (validation + CSRF protection)
-- **Frontend**: Server-rendered Jinja2 templates + Tailwind CSS, compiled via the **Tailwind CLI build** (not the Play CDN script — that generates CSS client-side at runtime, adding JS overhead and a flash of unstyled content, which is worse on mobile). No separate frontend framework.
-- **Stretch goal**: light JS interactivity (e.g. Alpine.js) for things like a mobile nav toggle or modals — not required for the core app
-- **Hosting**: Render or Railway
-- **Book metadata (optional)**: Open Library API for auto-filling cover/author
+**App factory + blueprints**: `app/__init__.py`'s `create_app()` wires config, three extensions (`db`, `migrate`, `login_manager` — all instantiated unbound in `app/extensions.py`, then `.init_app()`'d here to avoid circular imports with `models.py`), imports `app/models.py` once (required so Alembic's autogenerate can see the model classes — they're otherwise never imported anywhere in the factory's chain), and registers two blueprints: `auth` (`app/auth/`) and `books` (`app/books/`). Each blueprint package has `routes.py` (the `Blueprint` object + views) and `forms.py` (Flask-WTF forms); `__init__.py` just re-exports `bp` from `routes.py`.
 
-## Planned Data Model
+**Models** (`app/models.py`): `Member` (has `is_admin`, currently unused by any route — reserved for a future admin portal, see plan doc Phase 4), `Invite` (one-time registration tokens, created only via the `flask create-invite` CLI command, never through a web route), `Book`, `Rating`, and the `BookStatus` enum. `Book`'s title column is named `name`, not `title` — a naming mismatch from early development that was never renamed; forms/routes map between them (`Book(name=form.title.data, ...)`), it's intentional-by-inertia, not a bug.
 
-- **Member**: id, username, password_hash, display_name
-- **Book**: id, title, author, cover_url, created_at (date added), added_by (FK → Member, required), picked_by (FK → Member, optional — whose turn/choice this book was), status (to-read / currently reading / finished / abandoned), reading_start_date, reading_end_date
-- **Rating**: id, book_id (FK → Book), member_id (FK → Member), score (1–5, half-star increments), comment, created_at (date rated) — unique constraint on (book_id, member_id)
-- **Meeting** *(optional, later)*: id, book_id (FK → Book), date, notes
+**Auth is invite-only self-registration**, not manual seeding: `flask create-invite` creates an `Invite` row (token auto-generated via `secrets.token_urlsafe`), and `/auth/register/<token>` validates it (exists, unused, unexpired) before letting someone create their own `Member`. `display_name` defaults to `username` at registration — there's no separate field for it; changing it later is an unbuilt Phase 3 feature.
 
-`added_by` and `picked_by` are separate fields (required vs. optional — see plan doc). `status` is an explicit column, not derived from the reading dates, so "abandoned" has a clean representation. A member can only edit/delete their own rating. Book detail views should show all 4 members' ratings side by side plus the average.
+**Book edit/delete permission**: `current_user.id == book.picked_by_id or current_user.is_admin` (helper: `_can_manage()` in `app/books/routes.py`) — the person whose turn it was to pick the book, or an admin. Delete additionally refuses if the book has any ratings, to preserve reading history. Ratings themselves have no delete route at all (by design) — `book_detail()` is a combined GET/POST view that *upserts*: looks up any existing `Rating` for `(book_id, current_user.id)` and updates it in place, or creates one if none exists.
 
-## Key Open Decisions
+**WTForms gotcha worth knowing before adding more form fields**: `SomeForm(obj=some_model)` pre-fills fields by matching attribute names on the object. This breaks silently (no error, just wrong pre-filled value) whenever a form field's name doesn't line up 1:1 with a plain column — e.g. `BookForm.status` needs `book.status.name` (the object holds an enum member, the field expects the enum's string name), `BookForm.picked_by` needs `book.picked_by_id` (the object's matching-named attribute is a relationship returning a `Member`, not the FK int the field expects), and `BookForm.title` needs `book.name` (different attribute names entirely, per the mismatch above). `edit_book()` in `app/books/routes.py` overrides all three explicitly, guarded by `if request.method == "GET":` so the override doesn't clobber a real POST submission. Follow this pattern for any new form field backed by an enum, a relationship, or a differently-named column.
 
-See `docs/sb-bookclub-app-plan.md` for full context. Resolve these consistently rather than re-deciding ad hoc:
+**CSRF on non-FlaskForm actions**: Flask-WTF's CSRF protection is per-form-instance (validated via `form.validate_on_submit()`), not a blanket app-wide check — there's no global `CSRFProtect(app)` registered. A plain `<form method="POST">` with no Flask-WTF form behind it (e.g. a bare delete button) gets **no** CSRF protection. The pattern used for the book delete button (`DeleteForm` in `app/books/forms.py` — a fieldless `FlaskForm` that exists purely to carry a token) is the template to follow for any future action-only button.
 
-1. Can anyone edit any book's metadata, or only the person who added it? *(suggested: anyone, keep it simple)*
-2. Can a member delete their own rating, or only edit it?
-3. SQLite vs. Postgres — SQLite needs a host with persistent disk.
+## Data Model
+
+- **Member**: id, username, password_hash, display_name, is_admin
+- **Invite**: id, token (unique), created_at, expires_at (nullable, unused so far), used_at (nullable — null means still valid)
+- **Book**: id, name (displayed/referred to as "title"), author, cover_url, added_by_id (FK, required), picked_by_id (FK, nullable), created_at, reading_start_date, reading_end_date, status (`BookStatus` enum, has a DB-level `CHECK` constraint)
+- **Rating**: id, book_id (FK), member_id (FK), score (float, 1.0–5.0 in 0.5 steps, DB-level `CHECK` constraint), comment, created_at — unique constraint on `(book_id, member_id)`
+
+All decisions from the plan doc's "Decisions to Make Before Coding" are resolved — see that file for the reasoning, not repeated here.
 
 ## Development Approach
 
-This is an educational project. `docs/sb-bookclub-app-plan.md` is a phased checklist (Setup → Auth → Core CRUD → Views & Polish → Nice-to-Haves), not a full implementation spec — work through phases in order, researching unfamiliar pieces (Flask-Login, SQLAlchemy relationships, etc.) as they come up rather than upfront.
+This is an educational project. `docs/sb-bookclub-app-plan.md`'s Task Breakdown is the authoritative checklist of what's done vs. remaining — check it before assuming a feature doesn't exist.
