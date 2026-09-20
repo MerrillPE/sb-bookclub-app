@@ -106,7 +106,7 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 - [x] Add/edit rating route (scoped to current_user) — no delete route, per decision 2 above (edit-only, upserts in place rather than separate add/edit endpoints)
 
 ### Phase 3 — Views & Polish
-- [ ] Sorting/filtering query params on book list
+- [x] Sorting/filtering query params on book list — filter by status, sort by status/average rating/reading start date (default), via `?status=...&sort=...` on `GET /books/` (`app/books/routes.py`); status filter is SQL-side, all three sort options are Python-side (`average_rating` is a computed property, and "status" needs reading-progress order, not alphabetical — see code comments). `created_at` ("date added") is deliberately not offered as a sort option — it's DB record-keeping metadata, not something with frontend value.
 - [x] Average rating calculation (`Book.average_rating` property)
 - [x] Status badges/styling — styled via the `status_badge` macro (`app/templates/_macros.html`), keyed off `BookStatus`; see `docs/design-system.md`
 - [x] Half-star rating display — rendered via the `star_rating` macro (overlaid SVG stars, proportional fill), not the raw float anymore

@@ -1,3 +1,5 @@
+from datetime import date
+
 from flask import (
     Blueprint, abort, flash, redirect, render_template, request, url_for
 )
@@ -22,11 +24,37 @@ def _can_manage(book):
     return current_user.id == book.picked_by_id or current_user.is_admin
 
 
+def _sort_books(all_books, sort):
+    if sort == "status":
+        order = {s: i for i, s in enumerate(BookStatus)}
+        return sorted(all_books, key=lambda b: order[b.status])
+    if sort == "rating":
+        return sorted(all_books, key=lambda b: b.average_rating or 0, reverse=True)
+    # "start_date" (default): most recently started first. created_at ("date added") is
+    # deliberately not offered as a frontend sort — it's record-keeping metadata (when the
+    # row was created), not something a reader cares about; reading_start_date is.
+    return sorted(all_books, key=lambda b: b.reading_start_date or date.min, reverse=True)
+
+
 @bp.route("/")
 @login_required
-def books():
-    all_books = Book.query.all()
-    return render_template("books/list.html", books=all_books)
+def index():
+    status_filter = request.args.get("status", "")
+    sort = request.args.get("sort", "start_date")
+
+    query = Book.query
+    if status_filter in BookStatus.__members__:
+        query = query.filter_by(status=BookStatus[status_filter])
+
+    all_books = _sort_books(query.all(), sort)
+
+    return render_template(
+        "books/list.html",
+        books=all_books,
+        status_choices=[(s.name, s.value.replace("_", " ").title()) for s in BookStatus],
+        selected_status=status_filter,
+        selected_sort=sort,
+    )
 
 
 @bp.route("/add", methods=["GET", "POST"])
@@ -122,4 +150,4 @@ def delete_book(book_id):
         return redirect(url_for("books.book_detail", book_id=book.id))
     db.session.delete(book)
     db.session.commit()
-    return redirect(url_for("books.books"))
+    return redirect(url_for("books.index"))

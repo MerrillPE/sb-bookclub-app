@@ -3,7 +3,43 @@
 {% block content %}
 <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-serif font-semibold text-stone-900">Books</h1>
+    {#
     <a href="{{ url_for('books.add_book') }}" class="inline-flex items-center rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-800">Add a Book</a>
+    Commented out: reachable from the navbar's account menu instead (base.html). Kept here, disabled, in case it's wanted back on this page directly.
+    #}
+    <div class="relative">
+        <button type="button" data-filter-toggle class="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 shadow-sm hover:bg-stone-50" aria-expanded="false" aria-haspopup="true" aria-controls="filter-menu">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 01.628.74v2.288a2.25 2.25 0 01-.659 1.59l-4.682 4.683a2.25 2.25 0 00-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757l-1.937 1.55A.75.75 0 018 18.25v-5.757a2.25 2.25 0 00-.659-1.591L2.659 6.22A2.25 2.25 0 012 4.629V2.34a.75.75 0 01.628-.74z" clip-rule="evenodd"/></svg>
+            Filter
+        </button>
+        <div id="filter-menu" data-filter-menu class="hidden absolute right-0 mt-2 w-64 bg-white border border-stone-200 rounded-lg shadow-sm p-4 text-stone-700 z-10">
+            <form method="GET" class="flex flex-col gap-3">
+                <div>
+                    <label for="status" class="block text-sm font-medium text-stone-700">Status</label>
+                    <select name="status" id="status" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-amber-600 focus:ring-amber-600 sm:text-sm">
+                        <option value="">All</option>
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="sort" class="block text-sm font-medium text-stone-700">Sort by</label>
+                    <select name="sort" id="sort" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-amber-600 focus:ring-amber-600 sm:text-sm">
+                        <option value="start_date" {% if selected_sort == "start_date" %}selected{% endif %}>Start date</option>
+                        <option value="status" {% if selected_sort == "status" %}selected{% endif %}>Status</option>
+                        <option value="rating" {% if selected_sort == "rating" %}selected{% endif %}>Average rating</option>
+                    </select>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                    <button type="submit" class="inline-flex items-center rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-800">Apply</button>
+                    {% if selected_status or selected_sort != "start_date" %}
+                        <a href="{{ url_for('books.index') }}" class="text-sm text-stone-500 hover:text-stone-700 underline">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
   {% for book in books %}
@@ -22,6 +58,8 @@
         </div>
       </div>
     </a>
+  {% else %}
+    <p class="text-stone-500 col-span-full">No books match this filter.</p>
   {% endfor %}
 </div>
 {% endblock content %}

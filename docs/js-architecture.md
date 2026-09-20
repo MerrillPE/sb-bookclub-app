@@ -40,6 +40,14 @@ import "./books.js";
   A page/body-class namespacing scheme (e.g. `<body class="books-detail">` + a router-style dispatcher) was considered and rejected — it's more infrastructure than the 2–3 small Phase 4 features warrant. Revisit if the JS surface grows substantially.
 - **Vanilla JS, not Alpine.js.** Alpine.js was the plan doc's original Phase 4 suggestion (declarative `x-data`/`x-on` attributes, no build step). Vanilla JS was chosen instead specifically to keep the one-file-per-blueprint structure explicit and dependency-free — see `docs/sb-bookclub-app-plan.md`'s Phase 4 section for the current (updated) note.
 
+## Exception: site-wide chrome lives directly in `main.js`
+
+The "one file per blueprint" convention above assumes every piece of behavior is owned by exactly one blueprint. The navbar isn't — it's in `base.html`, rendered on every page regardless of blueprint, so it doesn't belong in `auth.js` or `books.js` any more than the other. Its behavior (the user-menu dropdown) is initialized directly in `main.js` instead, right below the `import` lines. `main.js` already loads on every page, so this is the natural home for anything that's genuinely site-wide rather than blueprint-specific. `auth.js`/`books.js` stay reserved for behavior actually specific to those blueprints' own pages.
+
+## Exception: shared low-level helpers live in `utils.js`
+
+A second, narrower exception: `app/static/js/utils.js` exports small reusable functions (currently just `initDropdown(toggleSelector, menuSelector)` — wires up click-to-toggle plus close-on-click-outside for a trigger/panel pair) that more than one file needs. This isn't page-owned behavior like the `main.js` exception above — it's a plain helper, imported wherever it's needed (`main.js` for the navbar's account menu, `books.js` for the book list's filter menu). It exists specifically to avoid copy-pasting the same ~10-line toggle logic into every file that wants a dropdown; if a third, unrelated kind of shared helper shows up later, it can live here too rather than each getting its own single-purpose file.
+
 ## Status
 
-Structure only, as of this doc's writing — `main.js`/`auth.js`/`books.js` exist as stubs with no behavior yet. Real interactivity (mobile nav toggle, etc.) is Phase 4 work; it drops into the existing files rather than requiring another `base.html` pass.
+`main.js` initializes the navbar's user-menu dropdown (`base.html`'s `[data-user-menu-toggle]`/`[data-user-menu]`). `books.js` has its first real behavior too: the book list's filter dropdown (`[data-filter-toggle]`/`[data-filter-menu]`). Both call the shared `initDropdown()` helper from `utils.js` rather than each implementing the toggle logic themselves. `auth.js` is still a stub — no auth-blueprint-specific interactivity has landed yet. Further Phase 4 features (modals, inline validation) drop into the relevant blueprint file when they come up.

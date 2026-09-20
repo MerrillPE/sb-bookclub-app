@@ -91,6 +91,14 @@ All six files above are done. Remaining Phase 3 work (sorting/filtering) is func
 - Alpine.js/JS interactivity, admin portal, Open Library auto-fill (Phase 4)
 - Dark mode (would roughly double every color decision above)
 
+## Navbar & expandable panels (Phase 4 addition)
+
+Navbar (`base.html`): site title left; a person-icon/`display_name` dropdown trigger, right (no separate "Books" link — `home` already redirects there). Account actions ("Add a Book", "Log out") live inside the dropdown, not as plain inline links — same `hover:text-amber-300` treatment on the trigger, dropdown panel itself uses the light card styling (`bg-white border border-stone-200 rounded-lg shadow-sm`), not the dark navbar palette, since it's not part of the nav bar visually. Toggled via real JS (`[data-user-menu-toggle]`/`[data-user-menu]`, via the shared `initDropdown()` helper — see `docs/js-architecture.md`), including close-on-click-outside.
+
+**Icon-button dropdown pattern** — the reusable shape for "collapse this control behind a small trigger instead of always showing it": a `relative`-positioned wrapper around a trigger `<button>` (icon + optional label) and an `absolute right-0 mt-2` panel using the light card styling, toggled by `initDropdown(toggleSelector, menuSelector)` (`app/static/js/utils.js`). The navbar's account menu and the book list's filter menu (`[data-filter-toggle]`/`[data-filter-menu]`) both use this shape — same interaction language site-wide. An earlier version of the filter menu used a native `<details>`/`<summary>` disclosure instead (no-JS, simpler) but was replaced with this pattern for visual/interaction consistency with the navbar once "Add a Book" moved out of it. `<details>` is still worth reaching for elsewhere if a future no-JS-dependency disclosure is wanted — it's just not what the filter menu uses anymore.
+
+**Layering:** `<nav>` is pinned at `relative z-20` so the navbar (and its dropdown) always renders above in-page content. Page-level dropdown panels (like `#filter-menu`) should stay at `z-10` or below — bumping a page-level dropdown to `z-20`+ would put it back in front of the navbar's own dropdown, reintroducing the stacking bug this convention fixed.
+
 ## Modern-convention notes
 
 - Tailwind v4's CSS-first `@theme` config (used above) is the current recommended pattern over the old `tailwind.config.js` — this project's already on it.

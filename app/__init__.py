@@ -1,5 +1,7 @@
 import os
-from flask import Flask, render_template
+from flask import Flask, redirect, url_for
+
+from flask_login import current_user
 
 from app.extensions import db, migrate, login_manager
 from app.config import Config
@@ -22,7 +24,9 @@ def create_app(test_config=None):
     
     @app.route("/")
     def home():
-        return render_template("base.html")
+        if current_user.is_authenticated:
+            return redirect(url_for("books.index"))
+        return redirect(url_for("auth.login"))
     
     from app import auth
     app.register_blueprint(auth.bp)

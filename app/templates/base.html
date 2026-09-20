@@ -10,9 +10,25 @@
         <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
     </head>
     <body class="bg-stone-50 text-stone-700">
-        <nav class="bg-stone-900 text-white px-4 py-3">
+        <nav class="relative z-20 bg-stone-900 text-white px-4 py-3">
             <div class="max-w-4xl mx-auto flex items-center justify-between">
-                <a href="{{ url_for('home') }}" class="text-lg font-semibold">Spine Busters Book Club</a>
+                <a href="{{ url_for('home') }}" class="text-lg font-serif font-semibold">Spine Busters Book Club</a>
+                <div class="flex items-center gap-4">
+                    {% if current_user.is_authenticated %}
+                        <div class="relative">
+                            <button type="button" data-user-menu-toggle class="flex items-center gap-2 hover:text-amber-300" aria-expanded="false" aria-haspopup="true" aria-controls="user-menu">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-6 w-6"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-5.5-2.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM10 12a5.99 5.99 0 00-4.793 2.39A6.483 6.483 0 0010 16.5a6.483 6.483 0 004.793-2.11A5.99 5.99 0 0010 12z" clip-rule="evenodd"/></svg>
+                                <span class="text-sm font-medium">{{ current_user.display_name }}</span>
+                            </button>
+                            <div id="user-menu" data-user-menu class="hidden absolute right-0 mt-2 w-40 bg-white border border-stone-200 rounded-lg shadow-sm py-1 text-stone-700">
+                                <a href="{{ url_for('books.add_book') }}" class="block px-4 py-2 text-sm hover:bg-stone-50">Add a Book</a>
+                                <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-sm hover:bg-stone-50">Log out</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="hover:text-amber-300">Log in</a>
+                    {% endif %}
+                </div>
             </div>
         </nav>
         <main class="max-w-4xl mx-auto px-4 py-8">
