@@ -46,7 +46,9 @@ The "one file per blueprint" convention above assumes every piece of behavior is
 
 ## Exception: shared low-level helpers live in `utils.js`
 
-A second, narrower exception: `app/static/js/utils.js` exports small reusable functions (currently just `initDropdown(toggleSelector, menuSelector)` — wires up click-to-toggle plus close-on-click-outside for a trigger/panel pair) that more than one file needs. This isn't page-owned behavior like the `main.js` exception above — it's a plain helper, imported wherever it's needed (`main.js` for the navbar's account menu, `books.js` for the book list's filter menu). It exists specifically to avoid copy-pasting the same ~10-line toggle logic into every file that wants a dropdown; if a third, unrelated kind of shared helper shows up later, it can live here too rather than each getting its own single-purpose file.
+A second, narrower exception: `app/static/js/utils.js` exports small reusable functions (currently just `initDropdown(toggleSelector, menuSelector)`) that more than one file needs. This isn't page-owned behavior like the `main.js` exception above — it's a plain helper, imported wherever it's needed (`main.js` for the navbar's account menu, `books.js` for the book list's filter menu). It exists specifically to avoid copy-pasting the same toggle logic into every file that wants a dropdown; if a third, unrelated kind of shared helper shows up later, it can live here too rather than each getting its own single-purpose file.
+
+`initDropdown()` handles, for every dropdown it's called on: click-to-toggle, close-on-click-outside, Escape-to-close (with focus returned to the trigger), and focus-on-open (moves to the first focusable element inside the panel). It also tracks every dropdown it's initialized for in a module-level registry, so opening one automatically closes any other that's open — mutual exclusivity across the whole app, not just within one dropdown, falls out of all dropdowns sharing this one function rather than each reimplementing it.
 
 ## Status
 
