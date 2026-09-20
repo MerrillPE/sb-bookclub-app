@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ book.name }}</h1>
+<p>by {{ book.author }}</p>
+<p>Status: {{ book.status_label }}</p>
+{% if book.picked_by %}<p>Picked by: {{ book.picked_by.display_name }}</p>{% endif %}
+{% if book.average_rating %}<p>Average rating: {{ "%.1f"|format(book.average_rating) }}</p>{% endif %}
+
+{% if current_user.id == book.picked_by_id or current_user.is_admin %}
+<a href="{{ url_for('books.edit_book', book_id=book.id) }}">Edit</a>
+<form method="POST" action="{{ url_for('books.delete_book', book_id=book.id) }}">
+    {{ delete_form.hidden_tag() }}
+    <button type="submit">Delete</button>
+</form>
+{% endif %}
+
+<h2>Ratings</h2>
+<ul>
+{% for rating in book.ratings %}
+    <li>{{ rating.member.display_name }}: {{ rating.score }}{% if rating.comment %} — {{ rating.comment }}{% endif %}</li>
+{% else %}
+    <li>No ratings yet.</li>
+{% endfor %}
+</ul>
+
+<h2>Your Rating</h2>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <p>{{ form.score.label }} {{ form.score() }}</p>
+    <p>{{ form.comment.label }} {{ form.comment() }}</p>
+    {{ form.submit() }}
+</form>
+{% set all_errors = form.score.errors + form.comment.errors %}
+{% if all_errors %}
+    <ul>
+    {% for error in all_errors %}
+        <li>{{ error }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+{% endblock content %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Books</h1>
+<a href="{{ url_for('books.add_book') }}">Add a Book</a>
+<ul>
+{% for book in books %}
+    <li>
+        <a href="{{ url_for('books.book_detail', book_id=book.id) }}">{{ book.name }}</a>
+        by {{ book.author }} — {{ book.status_label }}
+        {% if book.average_rating %} — Avg: {{ "%.1f"|format(book.average_rating) }}{% endif %}
+    </li>
+{% else %}
+    <li>No books yet.</li>
+{% endfor %}
+</ul>
+{% endblock content %}

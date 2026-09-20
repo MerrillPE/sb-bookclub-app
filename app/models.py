@@ -63,7 +63,17 @@ class Book(db.Model):
     added_by = db.relationship("Member", foreign_keys=[added_by_id])
     picked_by = db.relationship("Member", foreign_keys=[picked_by_id])
     ratings = db.relationship("Rating", back_populates="book")
-    
+
+    @property
+    def average_rating(self):
+        if not self.ratings:
+            return None
+        return sum(r.score for r in self.ratings) / len(self.ratings)
+
+    @property
+    def status_label(self):
+        return self.status.value.replace("_", " ").title()
+
     def __repr__(self):
         return f"<Book {self.name}>"
 

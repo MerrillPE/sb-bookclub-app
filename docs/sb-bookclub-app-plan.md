@@ -22,7 +22,7 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 
 **Ratings**
 - Each member can rate a finished book (pick a scale — see decisions below) + optional written comment
-- A member can edit/delete only *their own* rating
+- A member can edit only *their own* rating (no delete — see decisions below)
 - Book detail view shows all 4 members' ratings side by side + average
 
 **Views**
@@ -37,8 +37,8 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 - Low/no cost to run at this scale
 
 ### Decisions to Make Before Coding
-1. Can anyone edit any book's metadata, or only the person who added it? *(suggested: anyone, keep it simple)*
-2. Can a member delete their own rating, or only edit it?
+1. ~~Can anyone edit any book's metadata, or only the person who added it?~~ **Decided: the member who picked it (`Book.picked_by`) or an admin (`Member.is_admin`) can edit it.** Not `added_by` — whoever's turn/choice the book was is the one who can correct its metadata, plus admin override. Route logic: `current_user.id == book.picked_by_id or current_user.is_admin`. Since `picked_by` is nullable, a book with no `picked_by` set can only be edited by an admin. **Deletion uses the same permission, but the route additionally refuses (flashes an error) if the book has any `Rating` rows** — preserves rating history the same way decision 2 does, while still allowing cleanup of a genuine mistake (e.g. duplicate entry) before anyone's rated it.
+2. ~~Can a member delete their own rating, or only edit it?~~ **Decided: edit only, no delete.** Preserves a complete reading history (ties to the "don't lose reading history" non-functional requirement below) — a rating can be changed to a different score/comment, but never removed once submitted.
 3. ~~Manually seed the 4 accounts vs. build a signup flow?~~ **Decided: invite-only self-registration.** Neither pure manual seeding nor open signup — you (as admin) generate a unique one-time invite link per person via a `flask` CLI command; each person visits their own link once to set their own username/display name/password. See the `Invite` model in the Data Model section below.
 4. ~~Rating scale: 1–5, 1–10, half-star increments?~~ **Decided: 1–5, half-star increments (0.5 steps)**, enforced via a DB check constraint and/or form validation.
 

@@ -29,5 +29,14 @@ def create_app(test_config=None):
     
     from app import books
     app.register_blueprint(books.bp)
-    
+
+    @app.cli.command("create-invite")
+    def create_invite():
+        from app.models import Invite
+        invite = Invite()
+        db.session.add(invite)
+        db.session.commit()
+        print(f"Invite token: {invite.token}")
+        print(f"Registration link: /auth/register/{invite.token}")
+
     return app
