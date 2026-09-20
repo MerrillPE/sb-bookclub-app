@@ -1,24 +1,20 @@
+{% from "_macros.html" import form_field %}
 {% extends "base.html" %}
 {% block content %}
-<form method="POST">
-    {{ form.hidden_tag() }}
-    <p>{{ form.title.label }} {{ form.title() }}</p>
-    <p>{{ form.author.label }} {{ form.author() }}</p>
-    <p>{{ form.cover_url.label }} {{ form.cover_url() }}</p>
-    <p>{{ form.status.label }} {{ form.status() }}</p>
-    {% if current_user.is_admin %}
-    <p>{{ form.picked_by.label }} {{ form.picked_by() }}</p>
-    {% endif %}
-    <p>{{ form.reading_start_date.label }} {{ form.reading_start_date() }}</p>
-    <p>{{ form.reading_end_date.label }} {{ form.reading_end_date() }}</p>
-    {{ form.submit() }}
-</form>
-{% set all_errors = form.title.errors + form.author.errors + form.cover_url.errors + form.status.errors + form.picked_by.errors + form.reading_start_date.errors + form.reading_end_date.errors %}
-{% if all_errors %}
-    <ul>
-    {% for error in all_errors %}
-        <li>{{ error }}</li>
-    {% endfor %}
-    </ul>
-{% endif %}
+<div class="max-w-md mx-auto bg-white border border-stone-200 rounded-lg shadow-sm p-6">
+    <h1 class="text-2xl font-serif font-semibold text-stone-900 mb-4">Book Details</h1>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        {{ form_field(form.title) }}
+        {{ form_field(form.author) }}
+        {{ form_field(form.cover_url) }}
+        {{ form_field(form.status) }}
+        {% if current_user.is_admin %}
+            {{ form_field(form.picked_by) }}
+        {% endif %}
+        {{ form_field(form.reading_start_date) }}
+        {{ form_field(form.reading_end_date) }}
+        <button type="submit" class="inline-flex items-center rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-800">Save Book</button>
+    </form>
+</div>
 {% endblock content %}

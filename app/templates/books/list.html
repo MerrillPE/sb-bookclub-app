@@ -1,16 +1,27 @@
+{% from "_macros.html" import status_badge, star_rating %}
 {% extends "base.html" %}
 {% block content %}
-<h1>Books</h1>
-<a href="{{ url_for('books.add_book') }}">Add a Book</a>
-<ul>
-{% for book in books %}
-    <li>
-        <a href="{{ url_for('books.book_detail', book_id=book.id) }}">{{ book.name }}</a>
-        by {{ book.author }} — {{ book.status_label }}
-        {% if book.average_rating %} — Avg: {{ "%.1f"|format(book.average_rating) }}{% endif %}
-    </li>
-{% else %}
-    <li>No books yet.</li>
-{% endfor %}
-</ul>
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-serif font-semibold text-stone-900">Books</h1>
+    <a href="{{ url_for('books.add_book') }}" class="inline-flex items-center rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-800">Add a Book</a>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  {% for book in books %}
+    <a href="{{ url_for('books.book_detail', book_id=book.id) }}" class="block bg-white border border-stone-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+      {% if book.cover_url %}
+        <img src="{{ book.cover_url }}" alt="" loading="lazy" class="w-full aspect-[2/3] object-cover">
+      {% else %}
+        <div class="w-full aspect-[2/3] bg-stone-100 flex items-center justify-center text-stone-400 text-sm">No cover</div>
+      {% endif %}
+      <div class="p-4">
+        <h2 class="font-serif font-semibold text-stone-900">{{ book.name }}</h2>
+        <p class="text-sm text-stone-500">{{ book.author }}</p>
+        <div class="mt-2 flex items-center justify-between">
+          {{ status_badge(book.status.value, book.status_label) }}
+          {% if book.average_rating %}{{ star_rating(book.average_rating) }}{% endif %}
+        </div>
+      </div>
+    </a>
+  {% endfor %}
+</div>
 {% endblock content %}

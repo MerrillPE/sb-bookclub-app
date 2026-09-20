@@ -1,41 +1,56 @@
+{% from "_macros.html" import form_field, status_badge, star_rating %}
 {% extends "base.html" %}
 {% block content %}
-<h1>{{ book.name }}</h1>
-<p>by {{ book.author }}</p>
-<p>Status: {{ book.status_label }}</p>
-{% if book.picked_by %}<p>Picked by: {{ book.picked_by.display_name }}</p>{% endif %}
-{% if book.average_rating %}<p>Average rating: {{ "%.1f"|format(book.average_rating) }}</p>{% endif %}
+<div class="flex gap-6 items-start">
+    {% if book.cover_url %}
+        <img src="{{ book.cover_url }}" alt="" class="w-32 sm:w-40 aspect-[2/3] object-cover rounded-lg shadow-sm flex-none">
+    {% else %}
+        <div class="w-32 sm:w-40 aspect-[2/3] bg-stone-100 flex items-center justify-center text-stone-400 text-sm rounded-lg flex-none">No cover</div>
+    {% endif %}
+    <div>
+        <h1 class="text-3xl font-serif font-semibold text-stone-900">{{ book.name }}</h1>
+        <p class="text-stone-500">{{ book.author }}</p>
+        <div class="mt-2 flex items-center gap-3">
+            {{ status_badge(book.status.value, book.status_label) }}
+            {% if book.average_rating %}{{ star_rating(book.average_rating) }}{% endif %}
+        </div>
+        {% if book.picked_by %}<p class="mt-2 text-sm text-stone-600">Picked by {{ book.picked_by.display_name }}</p>{% endif %}
+        {% if book.reading_start_date %}<p class="text-sm text-stone-600">Started {{ book.reading_start_date.strftime('%b %-d, %Y') }}</p>{% endif %}
+        {% if book.reading_end_date %}<p class="text-sm text-stone-600">Finished {{ book.reading_end_date.strftime('%b %-d, %Y') }}</p>{% endif %}
+        {% if current_user.id == book.picked_by_id or current_user.is_admin %}
+        <div class="flex gap-2 mt-4">
+            <a href="{{ url_for('books.edit_book', book_id=book.id) }}" class="inline-flex items-center rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-800">Edit</a>
+            <form method="POST" action="{{ url_for('books.delete_book', book_id=book.id) }}">
+                {{ delete_form.hidden_tag() }}
+                <button type="submit" class="inline-flex items-center rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-rose-700">Delete</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
 
-{% if current_user.id == book.picked_by_id or current_user.is_admin %}
-<a href="{{ url_for('books.edit_book', book_id=book.id) }}">Edit</a>
-<form method="POST" action="{{ url_for('books.delete_book', book_id=book.id) }}">
-    {{ delete_form.hidden_tag() }}
-    <button type="submit">Delete</button>
-</form>
-{% endif %}
-
-<h2>Ratings</h2>
-<ul>
-{% for rating in book.ratings %}
-    <li>{{ rating.member.display_name }}: {{ rating.score }}{% if rating.comment %} — {{ rating.comment }}{% endif %}</li>
-{% else %}
-    <li>No ratings yet.</li>
-{% endfor %}
-</ul>
-
-<h2>Your Rating</h2>
-<form method="POST">
-    {{ form.hidden_tag() }}
-    <p>{{ form.score.label }} {{ form.score() }}</p>
-    <p>{{ form.comment.label }} {{ form.comment() }}</p>
-    {{ form.submit() }}
-</form>
-{% set all_errors = form.score.errors + form.comment.errors %}
-{% if all_errors %}
-    <ul>
-    {% for error in all_errors %}
-        <li>{{ error }}</li>
+<h2 class="text-xl font-serif font-semibold text-stone-900 mt-8 mb-4">Ratings</h2>
+<div class="divide-y divide-stone-200 border-t border-b border-stone-200">
+    {% for rating in book.ratings %}
+        <div class="py-3 flex items-start justify-between gap-4">
+            <div>
+                <p class="font-medium text-stone-900">{{ rating.member.display_name }}</p>
+                {% if rating.comment %}<p class="text-sm text-stone-600">{{ rating.comment }}</p>{% endif %}
+            </div>
+            {{ star_rating(rating.score) }}
+        </div>
+    {% else %}
+        <p class="py-3 text-sm text-stone-500">No ratings yet.</p>
     {% endfor %}
-    </ul>
-{% endif %}
+</div>
+
+<div class="max-w-sm bg-white border border-stone-200 rounded-lg shadow-sm p-6 mt-8">
+    <h2 class="text-xl font-serif font-semibold text-stone-900 mb-4">Your Rating</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        {{ form_field(form.score) }}
+        {{ form_field(form.comment) }}
+        <button type="submit" class="inline-flex items-center rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-800">Submit Review</button>
+    </form>
+</div>
 {% endblock content %}
