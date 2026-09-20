@@ -40,9 +40,11 @@ import "./books.js";
   A page/body-class namespacing scheme (e.g. `<body class="books-detail">` + a router-style dispatcher) was considered and rejected — it's more infrastructure than the 2–3 small Phase 4 features warrant. Revisit if the JS surface grows substantially.
 - **Vanilla JS, not Alpine.js.** Alpine.js was the plan doc's original Phase 4 suggestion (declarative `x-data`/`x-on` attributes, no build step). Vanilla JS was chosen instead specifically to keep the one-file-per-blueprint structure explicit and dependency-free — see `docs/sb-bookclub-app-plan.md`'s Phase 4 section for the current (updated) note.
 
-## Exception: site-wide chrome lives directly in `main.js`
+## Exception: site-wide chrome — and cross-blueprint widgets — live directly in `main.js`
 
 The "one file per blueprint" convention above assumes every piece of behavior is owned by exactly one blueprint. The navbar isn't — it's in `base.html`, rendered on every page regardless of blueprint, so it doesn't belong in `auth.js` or `books.js` any more than the other. Its behavior (the user-menu dropdown) is initialized directly in `main.js` instead, right below the `import` lines. `main.js` already loads on every page, so this is the natural home for anything that's genuinely site-wide rather than blueprint-specific. `auth.js`/`books.js` stay reserved for behavior actually specific to those blueprints' own pages.
+
+The same "wire it up in `main.js`" move also applies once a *reusable widget* (not just chrome) gets used by more than one blueprint's templates. `data-inline-edit`'s view/panel toggle started as books-only (the rating edit panel), but once `auth.js`'s login-page token-entry fields adopted the same markup shape, the `document.querySelectorAll("[data-inline-edit]").forEach(initInlineEditToggle)` call had to move out of `books.js` and into `main.js` — since `main.js` imports every blueprint file unconditionally, leaving that call duplicated in two files would wire up the *same* elements twice (double-bound listeners) on any page using the widget. One call in `main.js`, page-agnostic, covers every blueprint's usage of the widget going forward.
 
 ## Exception: shared low-level helpers live in `utils.js`
 
@@ -52,4 +54,4 @@ A second, narrower exception: `app/static/js/utils.js` exports small reusable fu
 
 ## Status
 
-`main.js` initializes the navbar's user-menu dropdown (`base.html`'s `[data-user-menu-toggle]`/`[data-user-menu]`). `books.js` has its first real behavior too: the book list's filter dropdown (`[data-filter-toggle]`/`[data-filter-menu]`). Both call the shared `initDropdown()` helper from `utils.js` rather than each implementing the toggle logic themselves. `auth.js` is still a stub — no auth-blueprint-specific interactivity has landed yet. Further Phase 4 features (modals, inline validation) drop into the relevant blueprint file when they come up.
+`main.js` initializes the navbar's user-menu dropdown (`base.html`'s `[data-user-menu-toggle]`/`[data-user-menu]`) and, now that more than one blueprint uses it, every `[data-inline-edit]` widget on the page. `books.js` has its own real behavior too: the book list's filter dropdown (`[data-filter-toggle]`/`[data-filter-menu]`). `admin.js` handles the Safari date-input Clear button (`[data-clear-target]`) and copy-to-clipboard buttons (`[data-copy-value]`) on the invites/members pages. `auth.js` wires up the login page's two inline token-entry forms (`#invite-token-form`/`#reset-token-form`), redirecting to the existing `register(token)`/`reset_password(token)` routes for validation. Further Phase 4 features (modals, inline validation) drop into the relevant blueprint file when they come up.

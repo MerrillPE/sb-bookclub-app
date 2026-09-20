@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import enum
 import secrets
 
@@ -43,8 +43,62 @@ class Invite(db.Model):
     expires_at = db.Column(db.DateTime, nullable=True)
     used_at = db.Column(db.DateTime, nullable=True)
 
+    @staticmethod
+    def create(expires_at=None):
+        invite = Invite(expires_at=expires_at)
+        db.session.add(invite)
+        db.session.commit()
+        return invite
+
+    @property
+    def is_expired(self):
+        # SQLite drops tzinfo on round-trip, so expires_at comes back naive even though it's
+        # stored as UTC -- compare against a naive UTC "now" rather than datetime.now(timezone.utc).
+        return self.expires_at is not None and self.expires_at < datetime.utcnow()
+
+    @property
+    def status_label(self):
+        if self.used_at is not None:
+            return "Used"
+        if self.is_expired:
+            return "Expired"
+        return "Pending"
+
     def __repr__(self):
         return f"<Invite token={self.token} used={self.used_at is not None}>"
+
+class PasswordReset(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    member_id = db.Column(db.Integer, db.ForeignKey("member.id"), nullable=False)
+    token = db.Column(db.String(64), unique=True, nullable=False, default=lambda: secrets.token_urlsafe(32))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc) + timedelta(hours=24))
+    used_at = db.Column(db.DateTime, nullable=True)
+
+    member = db.relationship("Member")
+
+    @staticmethod
+    def create(member):
+        reset = PasswordReset(member_id=member.id)
+        db.session.add(reset)
+        db.session.commit()
+        return reset
+
+    @property
+    def is_expired(self):
+        # SQLite drops tzinfo on round-trip -- compare naive UTC, same reasoning as Invite.is_expired.
+        return self.expires_at < datetime.utcnow()
+
+    @property
+    def status_label(self):
+        if self.used_at is not None:
+            return "Used"
+        if self.is_expired:
+            return "Expired"
+        return "Pending"
+
+    def __repr__(self):
+        return f"<PasswordReset member={self.member_id} used={self.used_at is not None}>"
 
 #TODO: In future may pull name/author/cover from some API based on ISBN
 class Book(db.Model):

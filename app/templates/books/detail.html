@@ -1,6 +1,18 @@
 {% from "_macros.html" import form_field, status_badge, star_rating, rating_card %}
 {% extends "base.html" %}
 {% block content %}
+<div class="flex items-center justify-between mb-4">
+    {% if newer_book %}
+        <a href="{{ url_for('books.book_detail', book_id=newer_book.id) }}" class="text-sm text-stone-600 hover:text-stone-900">‹ Newer</a>
+    {% else %}
+        <span></span>
+    {% endif %}
+    {% if older_book %}
+        <a href="{{ url_for('books.book_detail', book_id=older_book.id) }}" class="text-sm text-stone-600 hover:text-stone-900">Older ›</a>
+    {% else %}
+        <span></span>
+    {% endif %}
+</div>
 <div class="flex gap-6 items-start">
     {% if book.cover_url %}
         <img src="{{ book.cover_url }}" alt="" class="w-32 sm:w-40 aspect-[2/3] object-cover rounded-lg shadow-sm flex-none">

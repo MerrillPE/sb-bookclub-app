@@ -22,6 +22,10 @@
                             </button>
                             <div id="user-menu" data-user-menu class="hidden absolute right-0 mt-2 w-40 bg-white border border-stone-200 rounded-lg shadow-sm py-1 text-stone-700">
                                 <a href="{{ url_for('books.add_book') }}" class="block px-4 py-2 text-sm hover:bg-stone-50">Add a Book</a>
+                                {% if current_user.is_admin %}
+                                    <a href="{{ url_for('admin.invites') }}" class="block px-4 py-2 text-sm hover:bg-stone-50">Manage Invites</a>
+                                    <a href="{{ url_for('admin.members') }}" class="block px-4 py-2 text-sm hover:bg-stone-50">Manage Members</a>
+                                {% endif %}
                                 <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-sm hover:bg-stone-50">Log out</a>
                             </div>
                         </div>

@@ -58,7 +58,7 @@ This renders any 0.5-increment score (1.0–5.0) as a proportionally-filled star
 The same `<p>{{ form.field.label }} {{ form.field() }}</p>` pattern is duplicated across 4 templates today (login, register, book form, rating form) — enough repetition to warrant one shared macros file.
 
 ```jinja
-{% from "_macros.html" import form_field, status_badge, star_rating %}
+{% from "_macros.html" import form_field, status_badge, star_rating, book_card, rating_card, invite_status_badge %}
 ```
 
 - **`form_field(field)`** — label + input + error text, consistently styled:
@@ -67,6 +67,9 @@ The same `<p>{{ form.field.label }} {{ form.field() }}</p>` pattern is duplicate
   - error text (if `field.errors`): `mt-1 text-sm text-rose-600`
 - **`status_badge(status_value, status_label)`** — `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium` + the color pair from the table above, keyed on `status_value`
 - **`star_rating(score)`** — the half-star overlay component described above
+- **`book_card(book, highlighted=False)`** (Phase 4 addition) — the book list's cover/title/author/badge/rating card, extracted once it needed to render from more than one context (see "Currently Reading highlight" below). `highlighted=True` swaps the card's border for `border-2 border-amber-400` instead of `border border-stone-200`.
+- **`rating_card(rating, own=False)`** — a member's rating (name, stars, comment), with an edit-pencil trigger when `own=True`
+- **`invite_status_badge(status_label)`** (Phase 4 addition) — same shape as `status_badge`, keyed on the string labels `"Pending"`/`"Used"`/`"Expired"` instead of `BookStatus`, since the admin portal's invite/reset-link lifecycle isn't the same enum. Color pairs: Pending → `bg-amber-100 text-amber-800`, Used → `bg-emerald-100 text-emerald-700`, Expired → `bg-stone-100 text-stone-600`.
 
 Buttons are *not* macro'd — only a handful exist total, so repeating the utility-class string per variant (primary/danger) is fine at this scale. Revisit if more buttons get added later.
 
@@ -88,7 +91,7 @@ All six files above are done. Remaining Phase 3 work (sorting/filtering) is func
 ## Out of scope for this pass
 
 - Sorting/filtering query params (Phase 3 item, but functional not visual)
-- Alpine.js/JS interactivity, admin portal, Open Library auto-fill (Phase 4)
+- Open Library auto-fill (Phase 4)
 - Dark mode (would roughly double every color decision above)
 
 ## Navbar & expandable panels (Phase 4 addition)
@@ -98,6 +101,19 @@ Navbar (`base.html`): site title left; a person-icon/`display_name` dropdown tri
 **Icon-button dropdown pattern** — the reusable shape for "collapse this control behind a small trigger instead of always showing it": a `relative`-positioned wrapper around a trigger `<button>` (icon + optional label) and an `absolute right-0 mt-2` panel using the light card styling, toggled by `initDropdown(toggleSelector, menuSelector)` (`app/static/js/utils.js`). The navbar's account menu and the book list's filter menu (`[data-filter-toggle]`/`[data-filter-menu]`) both use this shape — same interaction language site-wide. An earlier version of the filter menu used a native `<details>`/`<summary>` disclosure instead (no-JS, simpler) but was replaced with this pattern for visual/interaction consistency with the navbar once "Add a Book" moved out of it. `<details>` is still worth reaching for elsewhere if a future no-JS-dependency disclosure is wanted — it's just not what the filter menu uses anymore.
 
 **Layering:** `<nav>` is pinned at `relative z-20` so the navbar (and its dropdown) always renders above in-page content. Page-level dropdown panels (like `#filter-menu`) should stay at `z-10` or below — bumping a page-level dropdown to `z-20`+ would put it back in front of the navbar's own dropdown, reintroducing the stacking bug this convention fixed.
+
+## Admin portal (Phase 4 addition)
+
+`/admin/invites` and `/admin/members` (`app/templates/admin/`) reuse the existing card/button vocabulary rather than introducing new chrome — a `max-w-md bg-white border border-stone-200 rounded-lg shadow-sm p-6` card for the "generate" form, `bg-white border border-stone-200 rounded-lg shadow-sm p-4` cards per invite/member row (same shape as `rating_card`), primary/danger buttons unchanged. Two small additions specific to these pages:
+
+- **Copy buttons** — a link/token pair is shown as plain monospace text (`font-mono break-all`, so it wraps on mobile and stays selectable even without JS) next to a `text-sm text-stone-500 hover:text-stone-700 underline` "Copy" button. Wired via a generic `[data-copy-value]` click handler in `app/static/js/admin.js` using the Clipboard API, with the button label swapping to "Copied!" briefly on success. Falls back gracefully (button just does nothing) if `navigator.clipboard` isn't available — the text is still there to select manually.
+- **Safari date-input Clear button** — Safari renders an empty `<input type="date">` showing today's date with no reliable in-UI way to clear it back to empty, so the optional expiration field on `/admin/invites` has an explicit `text-sm text-stone-500 hover:text-stone-700 underline` "Clear" button next to it (`[data-clear-target]`, also in `admin.js`) that resets the input's value directly.
+
+## Currently Reading highlight + prev/next navigation (Phase 4 addition)
+
+**Book list highlight**: Currently Reading cards get `border-2 border-amber-400` instead of the normal `border border-stone-200` (via `book_card(book, highlighted=True)`) — no separate section/heading, just the border, since a single amber accent was judged sufficient to draw the eye without adding page structure. This applies whenever a book's status is Currently Reading, regardless of which sort is active (not just the `reading_first` default) — simpler than making the highlight conditional on sort mode, and a currently-reading book is arguably always worth calling out.
+
+**Book detail prev/next**: a plain in-flow row (`flex items-center justify-between mb-4`) above the book's cover/title, not `fixed`-positioned — an earlier version used `fixed`-positioned circular icon buttons pinned to the viewport edges, gallery-style, but that overlapped page content on mobile where there's little margin to spare. Plain text links (`text-sm text-stone-600 hover:text-stone-900`, "‹ Newer" / "Older ›") avoid the problem entirely by staying in normal document flow, and match the app's existing lightweight secondary-link style (same as "Clear"/"Copy"/"Cancel") rather than introducing icon-button chrome for a two-link control. An empty `<span>` fills the side with no link so `justify-between` doesn't re-center the remaining one.
 
 ## Modern-convention notes
 

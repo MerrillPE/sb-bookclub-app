@@ -38,7 +38,7 @@ There's no signup page — accounts are created via invite link:
 ```
 flask create-invite
 ```
-This prints a token/path. Once the app is running (next step), visit `http://127.0.0.1:5000/auth/register/<the printed token>` to create your account.
+This prints a token/path. Once the app is running (next step), visit `http://127.0.0.1:5000/auth/register/<the printed token>` to create your account — or just go to the login page and click "Have an invite token?" to paste the bare token in directly instead of using the full link.
 
 **5. Run the app**
 ```
@@ -48,7 +48,7 @@ Visit `http://127.0.0.1:5000`.
 
 ## Making an account an admin
 
-Admins can edit/delete any book and (eventually) manage invites from a web UI — for now this has to be set directly, via `flask shell`:
+Admins can edit/delete any book and manage invites/password resets from a web UI (`/admin/invites`, `/admin/members`, both linked from the account dropdown once you're an admin) — but becoming the *first* admin has to be set directly, via `flask shell`, since there's no bootstrapping route:
 ```python
 >>> from app.models import Member
 >>> from app.extensions import db
@@ -57,9 +57,13 @@ Admins can edit/delete any book and (eventually) manage invites from a web UI �
 >>> db.session.commit()
 ```
 
+## Forgot your password?
+
+There's no email integration, so password resets are admin-initiated: an admin generates a one-time reset link for you from `/admin/members`, valid for 24 hours. Visit the link (or paste the bare token into "Have a password reset token?" on the login page) to set a new password yourself — the admin never sees or chooses it.
+
 ## Editing styles
 
-CSS is built from Tailwind and the compiled output is committed to git, so you don't need Node installed just to run the app. If you're changing templates/styles:
+CSS is built from Tailwind and the compiled output is committed to git, so you don't need Node installed just to run the app. If you're changing templates/styles (Node 22+ recommended — Node 18 is EOL):
 ```
 npm install
 npx @tailwindcss/cli -i ./app/static/src/input.css -o ./app/static/css/output.css --watch

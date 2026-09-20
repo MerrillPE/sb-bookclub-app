@@ -24,12 +24,19 @@ def _can_manage(book):
     return current_user.id == book.picked_by_id or current_user.is_admin
 
 
+_LIST_STATUS_ORDER = [BookStatus.CURRENTLY_READING, BookStatus.TO_BE_READ, BookStatus.FINISHED, BookStatus.ABANDONED]
+
+
 def _sort_books(all_books, sort):
     if sort == "status":
         order = {s: i for i, s in enumerate(BookStatus)}
         return sorted(all_books, key=lambda b: order[b.status])
     if sort == "rating":
         return sorted(all_books, key=lambda b: b.average_rating or 0, reverse=True)
+    if sort == "reading_first":
+        order = {s: i for i, s in enumerate(_LIST_STATUS_ORDER)}
+        by_date = sorted(all_books, key=lambda b: b.reading_start_date or date.min, reverse=True)
+        return sorted(by_date, key=lambda b: order[b.status])  # stable sort preserves date order within each status group
     # "start_date" (default): most recently started first. created_at ("date added") is
     # deliberately not offered as a frontend sort — it's record-keeping metadata (when the
     # row was created), not something a reader cares about; reading_start_date is.
@@ -40,7 +47,7 @@ def _sort_books(all_books, sort):
 @login_required
 def index():
     status_filter = request.args.get("status", "")
-    sort = request.args.get("sort", "start_date")
+    sort = request.args.get("sort", "reading_first")
 
     query = Book.query
     if status_filter in BookStatus.__members__:
@@ -86,6 +93,10 @@ def add_book():
 @login_required
 def book_detail(book_id):
     book = Book.query.get_or_404(book_id)
+    ordered_books = _sort_books(Book.query.all(), "start_date")
+    idx = next(i for i, b in enumerate(ordered_books) if b.id == book_id)
+    newer_book = ordered_books[idx - 1] if idx > 0 else None
+    older_book = ordered_books[idx + 1] if idx < len(ordered_books) - 1 else None
     existing_rating = Rating.query.filter_by(book_id=book_id, member_id=current_user.id).first()
     form = RatingForm(obj=existing_rating)
     delete_form = DeleteForm()
@@ -115,6 +126,8 @@ def book_detail(book_id):
         form=form,
         delete_form=delete_form,
         existing_rating=existing_rating,
+        newer_book=newer_book,
+        older_book=older_book,
     )
 
 
