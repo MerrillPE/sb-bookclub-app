@@ -4,7 +4,7 @@ import enum
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from app.extensions import db
+from app.extensions import db, login_manager
 
 
 class BookStatus(enum.Enum):
@@ -29,6 +29,10 @@ class Member(UserMixin, db.Model):
     
     def __repr__(self):
         return f"Member {self.username}"
+    
+@login_manager.user_loader
+def load_user(user_id):
+    return Member.query.get(int(user_id))
 
 #TODO: In future may pull name/author/cover from some API based on ISBN
 class Book(db.Model):

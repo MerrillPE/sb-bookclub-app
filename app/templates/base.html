@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Spine Busters Book Club{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+</head>
+<body>
+    <nav class="bg-slate-800 text-white px-4 py-3">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <a href="{{ url_for('home') }}" class="text-lg font-semibold">Spine Busters Book Club</a>
+        </div>
+    </nav>
+    {% block content %}{% endblock %}
+</body>
+</html>

@@ -32,3 +32,6 @@ htmlcov/
 
 # Personal local reference notes (not part of the project)
 .scratch/
+
+# Node dependencies (Tailwind CLI build tooling)
+node_modules/

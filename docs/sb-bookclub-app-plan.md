@@ -60,7 +60,9 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 
 **Key decision:** SQLite vs. Postgres — SQLite means zero external setup (data is just a file), but needs a host with persistent disk. Postgres (via Supabase/Neon free tier) avoids that concern from day one at the cost of slightly more setup.
 
-**Key decision:** Tailwind CLI build vs. Play CDN (`<script src="cdn.tailwindcss.com">`) — the CDN script generates CSS client-side at runtime (extra JS execution, a flash of unstyled content, no purging of unused classes). Since "mobile-friendly" is an explicit requirement and mobile devices are more sensitive to that overhead (slower CPUs, variable network), use the Tailwind CLI to compile a small static CSS file ahead of time instead. One-time setup (`tailwind.config.js` + a build command), no ongoing complexity.
+**Key decision:** Tailwind CLI build vs. Play CDN (`<script src="cdn.tailwindcss.com">`) — the CDN script generates CSS client-side at runtime (extra JS execution, a flash of unstyled content, no purging of unused classes). Since "mobile-friendly" is an explicit requirement and mobile devices are more sensitive to that overhead (slower CPUs, variable network), use the Tailwind CLI to compile a small static CSS file ahead of time instead. One-time setup (`npm install tailwindcss @tailwindcss/cli` + a build command), no ongoing complexity. Tailwind v4 dropped `tailwind.config.js` in favor of CSS-first config (`@import "tailwindcss";`) and auto-detects template files, so there's no `content`/purge config to maintain either.
+
+**Key decision:** Commit the compiled `app/static/css/output.css` to git rather than gitignoring it — there's no build step configured on Render/Railway yet, so committing the compiled CSS means the deployed app serves real styles without needing `npm install`/a Tailwind build to run on the host. `node_modules/` itself is still gitignored (large, fully reproducible from `package.json`). Revisit this if a proper build pipeline gets added to deployment later.
 
 ---
 

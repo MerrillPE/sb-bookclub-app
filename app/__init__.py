@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, render_template
 
 from app.extensions import db, migrate, login_manager
 from app.config import Config
@@ -20,9 +20,9 @@ def create_app(test_config=None):
     
     os.makedirs(app.instance_path, exist_ok=True)
     
-    @app.route("/home")
+    @app.route("/")
     def home():
-        return "Home Page"
+        return render_template("base.html")
     
     from app import auth
     app.register_blueprint(auth.bp)
