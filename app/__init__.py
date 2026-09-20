@@ -16,6 +16,8 @@ def create_app(test_config=None):
     migrate.init_app(app, db)
     login_manager.init_app(app)
     
+    from app import models # noqa: F401
+    
     os.makedirs(app.instance_path, exist_ok=True)
     
     @app.route("/home")

@@ -41,7 +41,7 @@ class Book(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     reading_start_date = db.Column(db.Date)
     reading_end_date = db.Column(db.Date)
-    status = db.Column(db.Enum(BookStatus), nullable=False, default=BookStatus.TO_BE_READ)
+    status = db.Column(db.Enum(BookStatus, create_constraint=True, name="ck_book_status"), nullable=False, default=BookStatus.TO_BE_READ)
     
     
     added_by = db.relationship("Member", foreign_keys=[added_by_id])
