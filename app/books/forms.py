@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, DateField, SelectField, SubmitField
+from wtforms import StringField, DateField, SelectField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Optional
 
 from app.models import BookStatus
@@ -32,7 +32,7 @@ class RatingForm(FlaskForm):
         coerce=float,
         validators=[DataRequired()],
         )
-    comment = StringField("Comment")
+    comment = TextAreaField("Comment", render_kw={"rows": 3})
     submit = SubmitField("Submit Review")
 
 class DeleteForm(FlaskForm):

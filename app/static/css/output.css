@@ -251,6 +251,9 @@
   .mt-4 {
     margin-top: calc(var(--spacing) * 4);
   }
+  .mt-6 {
+    margin-top: calc(var(--spacing) * 6);
+  }
   .mt-8 {
     margin-top: calc(var(--spacing) * 8);
   }
@@ -607,6 +610,9 @@
     }
     .hover\:text-amber-300:hover {
       color: var(--color-amber-300);
+    }
+    .hover\:text-stone-600:hover {
+      color: var(--color-stone-600);
     }
     .hover\:text-stone-700:hover {
       color: var(--color-stone-700);

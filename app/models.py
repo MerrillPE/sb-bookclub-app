@@ -74,6 +74,10 @@ class Book(db.Model):
     def status_label(self):
         return self.status.value.replace("_", " ").title()
 
+    @property
+    def is_finished(self):
+        return self.status == BookStatus.FINISHED
+
     def __repr__(self):
         return f"<Book {self.name}>"
 

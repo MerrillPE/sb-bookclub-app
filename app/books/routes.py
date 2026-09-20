@@ -90,6 +90,10 @@ def book_detail(book_id):
     form = RatingForm(obj=existing_rating)
     delete_form = DeleteForm()
 
+    if request.method == "POST" and book.status != BookStatus.FINISHED:
+        flash("Ratings can only be submitted for finished books.")
+        return redirect(url_for("books.book_detail", book_id=book_id))
+
     if form.validate_on_submit():
         if existing_rating:
             existing_rating.score = form.score.data
@@ -105,7 +109,13 @@ def book_detail(book_id):
         db.session.commit()
         return redirect(url_for("books.book_detail", book_id=book_id))
 
-    return render_template("books/detail.html", book=book, form=form, delete_form=delete_form)
+    return render_template(
+        "books/detail.html",
+        book=book,
+        form=form,
+        delete_form=delete_form,
+        existing_rating=existing_rating,
+    )
 
 
 @bp.route("/<int:book_id>/edit", methods=["GET", "POST"])

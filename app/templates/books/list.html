@@ -54,7 +54,7 @@
         <p class="text-sm text-stone-500">{{ book.author }}</p>
         <div class="mt-2 flex items-center justify-between">
           {{ status_badge(book.status.value, book.status_label) }}
-          {% if book.average_rating %}{{ star_rating(book.average_rating) }}{% endif %}
+          {% if book.is_finished and book.average_rating %}{{ star_rating(book.average_rating) }}{% endif %}
         </div>
       </div>
     </a>

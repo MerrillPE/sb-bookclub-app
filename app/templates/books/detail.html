@@ -1,4 +1,4 @@
-{% from "_macros.html" import form_field, status_badge, star_rating %}
+{% from "_macros.html" import form_field, status_badge, star_rating, rating_card %}
 {% extends "base.html" %}
 {% block content %}
 <div class="flex gap-6 items-start">
@@ -12,7 +12,7 @@
         <p class="text-stone-500">{{ book.author }}</p>
         <div class="mt-2 flex items-center gap-3">
             {{ status_badge(book.status.value, book.status_label) }}
-            {% if book.average_rating %}{{ star_rating(book.average_rating) }}{% endif %}
+            {% if book.is_finished and book.average_rating %}{{ star_rating(book.average_rating) }}{% endif %}
         </div>
         {% if book.picked_by %}<p class="mt-2 text-sm text-stone-600">Picked by {{ book.picked_by.display_name }}</p>{% endif %}
         {% if book.reading_start_date %}<p class="text-sm text-stone-600">Started {{ book.reading_start_date.strftime('%b %-d, %Y') }}</p>{% endif %}
@@ -29,23 +29,43 @@
     </div>
 </div>
 
+{% if book.is_finished %}
 <h2 class="text-xl font-serif font-semibold text-stone-900 mt-8 mb-4">Ratings</h2>
-<div class="divide-y divide-stone-200 border-t border-b border-stone-200">
-    {% for rating in book.ratings %}
-        <div class="py-3 flex items-start justify-between gap-4">
-            <div>
-                <p class="font-medium text-stone-900">{{ rating.member.display_name }}</p>
-                {% if rating.comment %}<p class="text-sm text-stone-600">{{ rating.comment }}</p>{% endif %}
-            </div>
-            {{ star_rating(rating.score) }}
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% if existing_rating %}
+    <div data-inline-edit>
+        <div data-inline-edit-view>
+            {{ rating_card(existing_rating, own=True) }}
         </div>
-    {% else %}
-        <p class="py-3 text-sm text-stone-500">No ratings yet.</p>
+        <div data-inline-edit-panel class="hidden bg-white border border-stone-200 rounded-lg shadow-sm p-4">
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                {{ form_field(form.score) }}
+                {{ form_field(form.comment) }}
+                <div class="flex gap-2">
+                    <button type="submit" class="inline-flex items-center rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-800">Submit Review</button>
+                    <button type="button" data-inline-edit-cancel class="inline-flex items-center rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    {% for rating in book.ratings %}
+        {% if rating.member_id != current_user.id %}
+            {{ rating_card(rating, own=False) }}
+        {% endif %}
     {% endfor %}
+
+    {% if not book.ratings %}
+        <p class="text-sm text-stone-500 col-span-full">No ratings yet.</p>
+    {% endif %}
 </div>
 
-<div class="max-w-sm bg-white border border-stone-200 rounded-lg shadow-sm p-6 mt-8">
-    <h2 class="text-xl font-serif font-semibold text-stone-900 mb-4">Your Rating</h2>
+{% if not existing_rating %}
+<div class="max-w-sm bg-white border border-stone-200 rounded-lg shadow-sm p-6 mt-6">
+    <h3 class="text-lg font-serif font-semibold text-stone-900 mb-4">Your Rating</h3>
     <form method="POST">
         {{ form.hidden_tag() }}
         {{ form_field(form.score) }}
@@ -53,4 +73,6 @@
         <button type="submit" class="inline-flex items-center rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-800">Submit Review</button>
     </form>
 </div>
+{% endif %}
+{% endif %}
 {% endblock content %}

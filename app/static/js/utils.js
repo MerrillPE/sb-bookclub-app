@@ -46,3 +46,27 @@ export function initDropdown(toggleSelector, menuSelector) {
         }
     });
 }
+
+export function initInlineEditToggle(root) {
+    const trigger = root.querySelector("[data-inline-edit-trigger]");
+    const view = root.querySelector("[data-inline-edit-view]");
+    const panel = root.querySelector("[data-inline-edit-panel]");
+    const cancel = root.querySelector("[data-inline-edit-cancel]");
+    if (!trigger || !view || !panel) return;
+
+    trigger.addEventListener("click", () => {
+        view.classList.add("hidden");
+        panel.classList.remove("hidden");
+        const focusTarget = panel.querySelector("select, input, textarea");
+        if (focusTarget) focusTarget.focus();
+    });
+
+    if (cancel) {
+        cancel.addEventListener("click", () => {
+            const form = panel.querySelector("form");
+            if (form) form.reset();
+            panel.classList.add("hidden");
+            view.classList.remove("hidden");
+        });
+    }
+}
