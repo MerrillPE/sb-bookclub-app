@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import enum
+import secrets
 
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -18,7 +19,8 @@ class Member(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     display_name = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    
+    is_admin = db.Column(db.Boolean, nullable=False, default=False)
+
     ratings = db.relationship("Rating", back_populates="member")
     
     def set_password(self, raw_password):
@@ -33,6 +35,16 @@ class Member(UserMixin, db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return Member.query.get(int(user_id))
+
+class Invite(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(64), unique=True, nullable=False, default=lambda: secrets.token_urlsafe(32))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime, nullable=True)
+    used_at = db.Column(db.DateTime, nullable=True)
+
+    def __repr__(self):
+        return f"<Invite token={self.token} used={self.used_at is not None}>"
 
 #TODO: In future may pull name/author/cover from some API based on ISBN
 class Book(db.Model):

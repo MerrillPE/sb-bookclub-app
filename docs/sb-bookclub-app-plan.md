@@ -10,7 +10,7 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 ### Functional Requirements
 
 **Auth**
-- 4 member accounts (manually seeded, not self-registration)
+- 4 member accounts, created via invite-only self-registration (not open signup, not manually seeded by an admin directly)
 - Login/logout with sessions
 - Passwords hashed — never stored in plaintext
 
@@ -39,7 +39,7 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 ### Decisions to Make Before Coding
 1. Can anyone edit any book's metadata, or only the person who added it? *(suggested: anyone, keep it simple)*
 2. Can a member delete their own rating, or only edit it?
-3. Manually seed the 4 accounts vs. build a signup flow? *(suggested: manual seeding — simpler, no email verification needed)*
+3. ~~Manually seed the 4 accounts vs. build a signup flow?~~ **Decided: invite-only self-registration.** Neither pure manual seeding nor open signup — you (as admin) generate a unique one-time invite link per person via a `flask` CLI command; each person visits their own link once to set their own username/display name/password. See the `Invite` model in the Data Model section below.
 4. ~~Rating scale: 1–5, 1–10, half-star increments?~~ **Decided: 1–5, half-star increments (0.5 steps)**, enforced via a DB check constraint and/or form validation.
 
 ---
@@ -68,10 +68,13 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 
 ## 3. Data Model (rough sketch)
 
-- **Member**: id, username, password_hash, display_name
+- **Member**: id, username, password_hash, display_name, is_admin (boolean, default False — not used yet; added ahead of the future admin-portal work below to avoid a separate migration later)
+- **Invite**: id, token (unique, random URL-safe string — the value embedded in the invite link), created_at, expires_at (nullable — no forced expiration for now), used_at (nullable — null means still valid/unredeemed, set once someone registers through it)
 - **Book**: id, title, author, cover_url, created_at (date added), added_by (FK → Member, required), picked_by (FK → Member, optional — whose turn/choice this book was), status (to-read / currently reading / finished / abandoned), reading_start_date, reading_end_date
 - **Rating**: id, book_id (FK → Book), member_id (FK → Member), score (1–5, half-star increments), comment, created_at (date rated) — unique constraint on (book_id, member_id): one rating per member per book
 - **Meeting** *(optional, later)*: id, book_id (FK → Book), date, notes
+
+**Note on Invite:** deliberately a separate model from `Member`, not extra nullable fields bolted onto it — keeps `Member.username`/`password_hash` non-nullable and means an unredeemed invite is never a half-formed member row. Invites are created via a `flask` CLI command (only you have server access to run it), not through any web route; the only public-facing piece is the registration form that redeems a given token.
 
 **Note:** `added_by` and `picked_by` are deliberately separate fields — `added_by` is the required "who entered this book into the tracker" field from the functional requirements above, while `picked_by` is the optional "whose turn it was" field. `status` is an explicit column (not derived from the reading dates) specifically so "abandoned" has a clean representation independent of whether start/end dates are set.
 
@@ -86,10 +89,12 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 - [ ] Base Jinja template + Tailwind CLI build setup (compiled static CSS, not the Play CDN script)
 
 ### Phase 1 — Auth
-- [ ] Define `Member` model with hashed passwords
-- [ ] Set up Flask-Login (user loader, login/logout routes)
+- [x] Define `Member` model with hashed passwords
+- [x] Set up Flask-Login (user loader, login/logout routes)
 - [ ] Login page + form (Flask-WTF)
-- [ ] Seed script for the 4 accounts
+- [x] `Invite` model
+- [ ] `flask create-invite` CLI command (generates a token, prints the link)
+- [ ] Invite-redemption route (`/auth/register/<token>`) + form — validates token exists/unused/unexpired, creates the `Member`, stamps `used_at`
 - [ ] `@login_required` on protected routes
 
 ### Phase 2 — Core CRUD
@@ -116,6 +121,7 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 - [ ] Comments/discussion thread per book
 - [ ] Export to CSV/shareable summary
 - [ ] **Stretch**: JS interactivity for things a server round-trip is overkill for — mobile nav toggle, modals, inline form validation, etc. (Alpine.js is a natural fit alongside Tailwind — lightweight, no build step of its own, declarative like Tailwind's utility classes)
+- [ ] **Stretch**: Admin portal for generating invite links from the web app instead of the `flask create-invite` CLI command. `Member.is_admin` already exists for this (added early, unused until this lands) — the portal work itself (an admin-only view, route protection checking `current_user.is_admin`, a form to create/list/revoke invites) is not started
 
 ---
 
