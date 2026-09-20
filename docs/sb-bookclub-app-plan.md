@@ -120,7 +120,7 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 - [ ] Voting/nomination system for the next book
 - [ ] Comments/discussion thread per book
 - [ ] Export to CSV/shareable summary
-- [ ] **Stretch**: JS interactivity for things a server round-trip is overkill for — mobile nav toggle, modals, inline form validation, etc. (Alpine.js is a natural fit alongside Tailwind — lightweight, no build step of its own, declarative like Tailwind's utility classes)
+- [ ] **Stretch**: JS interactivity for things a server round-trip is overkill for — mobile nav toggle, modals, inline form validation, etc. **Decided: vanilla JS (native ES modules, no bundler), organized one file per blueprint (`app/static/js/{auth,books}.js`) plus a `main.js` manifest** — see `docs/js-architecture.md` for the full convention. (Originally considered Alpine.js for this; vanilla JS was chosen instead to keep the file-per-blueprint structure explicit and dependency-free.)
 - [ ] **Stretch**: Admin portal for generating invite links from the web app instead of the `flask create-invite` CLI command. `Member.is_admin` already exists for this (added early, unused until this lands) — the portal work itself (an admin-only view, route protection checking `current_user.is_admin`, a form to create/list/revoke invites) is not started
 
 ---
