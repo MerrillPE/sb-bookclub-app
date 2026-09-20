@@ -28,7 +28,7 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 **Views**
 - Book list: sortable/filterable by status, average rating, date
 - Book detail: full info + all ratings/comments
-- Optional: member profile/stats page
+- Optional: member profile/stats page — including letting a member change their own `display_name` later (it defaults to their `username` at registration time, not collected as a separate field on the registration form)
 
 ### Non-Functional Requirements
 - Mobile-friendly (people will rate books from their phones)

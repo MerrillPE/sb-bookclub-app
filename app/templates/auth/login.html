@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <p>{{ form.username.label }} {{ form.username() }}</p>
+    <p>{{ form.password.label }} {{ form.password() }}</p>
+    {{ form.submit() }}
+</form>
+{% set all_errors = form.username.errors + form.password.errors %}
+{% if all_errors %}
+    <ul>
+    {% for error in all_errors %}
+        <li>{{ error }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+{% endblock content %}
