@@ -15,6 +15,7 @@ class BookForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired()])
     author = StringField("Author", validators=[DataRequired()])
     cover_url = StringField("Cover URL")
+    isbn = StringField("ISBN", validators=[Optional()])
     status = SelectField(
         "Status",
         choices=[(s.name, s.value.replace("_", " ").title()) for s in BookStatus],

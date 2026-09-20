@@ -100,12 +100,12 @@ class PasswordReset(db.Model):
     def __repr__(self):
         return f"<PasswordReset member={self.member_id} used={self.used_at is not None}>"
 
-#TODO: In future may pull name/author/cover from some API based on ISBN
 class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     author = db.Column(db.String(120), nullable=False)
     cover_url = db.Column(db.String(255))
+    isbn = db.Column(db.String(20))
     added_by_id = db.Column(db.Integer, db.ForeignKey("member.id"), nullable=False)
     picked_by_id = db.Column(db.Integer, db.ForeignKey("member.id")) # Allow to be set by admin for another member
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

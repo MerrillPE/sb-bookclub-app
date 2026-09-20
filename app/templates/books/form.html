@@ -8,13 +8,26 @@
         {{ form_field(form.title) }}
         {{ form_field(form.author) }}
         {{ form_field(form.cover_url) }}
+        {{ form_field(form.isbn) }}
+        <div class="mb-4">
+            <button type="button" data-book-lookup
+                    class="inline-flex items-center rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 shadow-sm hover:bg-stone-50">
+                Look up on Open Library
+            </button>
+            <p data-book-lookup-error class="hidden mt-1 text-sm text-stone-500">No match found &mdash; enter details manually.</p>
+            <div data-book-lookup-candidates class="hidden mt-2 space-y-2"></div>
+        </div>
         {{ form_field(form.status) }}
         {% if current_user.is_admin %}
             {{ form_field(form.picked_by) }}
         {% endif %}
         {{ form_field(form.reading_start_date) }}
         {{ form_field(form.reading_end_date) }}
-        <button type="submit" class="inline-flex items-center rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-800">Save Book</button>
+        <div class="flex items-center gap-3">
+            <button type="submit" class="inline-flex items-center rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-800">Save Book</button>
+            <a href="{{ url_for('books.book_detail', book_id=book.id) if book else url_for('books.index') }}"
+               class="inline-flex items-center rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">Cancel</a>
+        </div>
     </form>
 </div>
 {% endblock content %}

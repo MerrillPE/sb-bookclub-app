@@ -1,3 +1,157 @@
 import { initDropdown } from "./utils.js";
 
 initDropdown("[data-filter-toggle]", "[data-filter-menu]");
+
+function fillBookFields({ title, author, cover_url, isbn }) {
+  const setValue = (id, value) => {
+    const field = document.getElementById(id);
+    if (field && value) field.value = value;
+  };
+  setValue("title", title);
+  setValue("author", author);
+  setValue("cover_url", cover_url);
+  setValue("isbn", isbn);
+}
+
+function makeCandidateButton(candidateData, className, label, onPick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = className;
+  button.textContent = label;
+  button.addEventListener("click", () => onPick(candidateData));
+  return button;
+}
+
+function addCoverThumb(thumbs, candidate, coverUrl, pick) {
+  const thumbButton = makeCandidateButton(
+    { ...candidate, cover_url: coverUrl },
+    "block rounded border border-stone-200 overflow-hidden hover:border-amber-500",
+    "",
+    pick,
+  );
+  const img = document.createElement("img");
+  img.src = coverUrl;
+  img.loading = "lazy";
+  img.alt = `${candidate.title} cover option`;
+  img.className = "h-16 w-auto";
+  // Open Library can still return a 200 with a 1x1 placeholder GIF for an edition
+  // its own metadata claims has a cover, so a load error alone won't catch it --
+  // check actual pixel size as a defense-in-depth backstop.
+  img.addEventListener("load", () => {
+    if (img.naturalWidth <= 1) thumbButton.remove();
+  });
+  thumbButton.appendChild(img);
+  thumbs.appendChild(thumbButton);
+}
+
+function renderLookupCandidates(container, candidates) {
+  container.innerHTML = "";
+  const pick = (candidateData) => {
+    fillBookFields(candidateData);
+    container.classList.add("hidden");
+  };
+
+  candidates.forEach((candidate) => {
+    const row = document.createElement("div");
+
+    const year = candidate.year ? ` (${candidate.year})` : "";
+    const mainButton = makeCandidateButton(
+      candidate,
+      "flex items-center gap-3 w-full text-left rounded-md border border-stone-200 px-3 py-2 text-sm hover:bg-stone-50",
+      "",
+      pick,
+    );
+    if (candidate.cover_url) {
+      const thumb = document.createElement("img");
+      thumb.src = candidate.cover_url;
+      thumb.loading = "lazy";
+      thumb.alt = "";
+      thumb.className = "h-12 w-auto flex-none rounded";
+      // Same 1x1-placeholder guard used for the "more covers" thumbnails below.
+      thumb.addEventListener("load", () => {
+        if (thumb.naturalWidth <= 1) thumb.remove();
+      });
+      mainButton.appendChild(thumb);
+    }
+    const label = document.createElement("span");
+    label.textContent = `${candidate.title} — ${candidate.author}${year}`;
+    mainButton.appendChild(label);
+    row.appendChild(mainButton);
+
+    if (candidate.work_key) {
+      const thumbs = document.createElement("div");
+      thumbs.className = "hidden mt-1 flex flex-wrap gap-2";
+
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "mt-1 text-xs text-amber-700 hover:underline";
+      toggle.textContent = "Show more covers";
+
+      let loaded = false;
+      toggle.addEventListener("click", async () => {
+        thumbs.classList.toggle("hidden");
+        if (loaded || thumbs.classList.contains("hidden")) return;
+        loaded = true;
+        toggle.textContent = "Loading…";
+        try {
+          const response = await fetch(`/books/api/lookup/covers?work=${encodeURIComponent(candidate.work_key)}`);
+          const data = await response.json();
+          const covers = data.covers || [];
+          if (!covers.length) {
+            toggle.textContent = "No other covers found";
+            toggle.disabled = true;
+            return;
+          }
+          covers.forEach((coverUrl) => addCoverThumb(thumbs, candidate, coverUrl, pick));
+          toggle.textContent = "Show more covers";
+        } catch (err) {
+          toggle.textContent = "Show more covers";
+          loaded = false;
+        }
+      });
+
+      row.appendChild(toggle);
+      row.appendChild(thumbs);
+    }
+
+    container.appendChild(row);
+  });
+  container.classList.remove("hidden");
+}
+
+document.querySelectorAll("[data-book-lookup]").forEach((button) => {
+  const form = button.closest("form");
+  const errorMessage = form?.querySelector("[data-book-lookup-error]");
+  const candidatesContainer = form?.querySelector("[data-book-lookup-candidates]");
+  if (!form || !errorMessage || !candidatesContainer) return;
+
+  button.addEventListener("click", async () => {
+    errorMessage.classList.add("hidden");
+    candidatesContainer.classList.add("hidden");
+
+    const isbn = document.getElementById("isbn")?.value.trim() ?? "";
+    const title = document.getElementById("title")?.value.trim() ?? "";
+    const author = document.getElementById("author")?.value.trim() ?? "";
+    const params = new URLSearchParams();
+    if (isbn) params.set("isbn", isbn);
+    if (title) params.set("title", title);
+    if (author) params.set("author", author);
+
+    button.disabled = true;
+    try {
+      const response = await fetch(`/books/api/lookup?${params.toString()}`);
+      const data = await response.json();
+      if (data.match) {
+        fillBookFields(data.match);
+      } else if (data.candidates && data.candidates.length) {
+        renderLookupCandidates(candidatesContainer, data.candidates);
+      } else {
+        errorMessage.classList.remove("hidden");
+      }
+    } catch (err) {
+      errorMessage.classList.remove("hidden");
+    } finally {
+      button.disabled = false;
+    }
+  });
+});
