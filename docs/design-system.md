@@ -75,13 +75,15 @@ Danger button (delete): same shape, `bg-rose-600 hover:bg-rose-700`
 
 ## Per-file checklist
 
-- [ ] **`app/templates/_macros.html`** (new) — `form_field`, `status_badge`, `star_rating`
-- [ ] **`base.html`** — navbar → `bg-stone-900`; add Lora `<link>` + `@theme --font-serif`; wrap `{% block content %}` in `<main class="max-w-4xl mx-auto px-4 py-8">` (no content wrapper exists today)
-- [ ] **`auth/login.html`** — centered card (`max-w-sm mx-auto bg-white border border-stone-200 rounded-lg shadow-sm p-6`), fields via `form_field`, primary submit button, styled error box instead of bare `<ul>`
-- [ ] **`auth/register.html`** — same card treatment as login
-- [ ] **`books/list.html`** — card grid (`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4`); each card: `cover_url` image if set (with a placeholder if not — currently collected, never displayed anywhere), `font-serif` title, `status_badge`, `star_rating` replacing the raw "Avg: X.X" text
-- [ ] **`books/detail.html`** — header with cover + title/author/`status_badge`/`star_rating`; **add `reading_start_date`/`reading_end_date` display** (collected today, never shown — use the same graceful "not set" pattern already used for `picked_by`); Edit = primary button, Delete = danger button; ratings list uses `star_rating`; "Your Rating" form gets the card treatment
-- [ ] **`books/form.html`** — card treatment, every field via `form_field` including the `status`/`picked_by` selects
+- [x] **`app/templates/_macros.html`** (new) — `form_field`, `status_badge`, `star_rating`
+- [x] **`base.html`** — navbar → `bg-stone-900`; add Lora `<link>` + `@theme --font-serif`; wrap `{% block content %}` in `<main class="max-w-4xl mx-auto px-4 py-8">` (no content wrapper exists today)
+- [x] **`auth/login.html`** — centered card (`max-w-sm mx-auto bg-white border border-stone-200 rounded-lg shadow-sm p-6`), fields via `form_field`, primary submit button, styled error box instead of bare `<ul>`
+- [x] **`auth/register.html`** — same card treatment as login
+- [x] **`books/list.html`** — card grid (`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4`); each card: `cover_url` image if set (with a placeholder if not — currently collected, never displayed anywhere), `font-serif` title, `status_badge`, `star_rating` replacing the raw "Avg: X.X" text
+- [x] **`books/detail.html`** — header with cover + title/author/`status_badge`/`star_rating`; **add `reading_start_date`/`reading_end_date` display** (collected today, never shown — omitted when unset, same as the existing `picked_by` pattern); Edit = primary button, Delete = danger button; ratings list uses `star_rating`; "Your Rating" form gets the card treatment
+- [x] **`books/form.html`** — card treatment, every field via `form_field` including the `status`/`picked_by` selects
+
+All six files above are done. Remaining Phase 3 work (sorting/filtering) is functional, not visual — tracked in `docs/sb-bookclub-app-plan.md` instead, not this checklist.
 
 ## Out of scope for this pass
 

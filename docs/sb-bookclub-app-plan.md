@@ -108,10 +108,10 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 ### Phase 3 — Views & Polish
 - [ ] Sorting/filtering query params on book list
 - [x] Average rating calculation (`Book.average_rating` property)
-- [ ] Status badges/styling — label mapping is done (`Book.status_label` property, used in templates), but rendered as plain text, not styled badges yet
-- [ ] Half-star rating display — still prints the raw float (`{{ rating.score }}`), not rendered as star icons
-- [ ] Conditionally render optional fields — partially done: `picked_by` has a graceful "not set" state in `detail.html`, but `reading_start_date`/`reading_end_date` aren't displayed anywhere on the detail page yet (collected in the form, never shown)
-- [ ] Mobile-responsive pass — books templates are plain unstyled HTML so far, matching the auth templates' minimal style; no Tailwind classes applied yet
+- [x] Status badges/styling — styled via the `status_badge` macro (`app/templates/_macros.html`), keyed off `BookStatus`; see `docs/design-system.md`
+- [x] Half-star rating display — rendered via the `star_rating` macro (overlaid SVG stars, proportional fill), not the raw float anymore
+- [x] Conditionally render optional fields — `reading_start_date`/`reading_end_date` are now displayed on the detail page (omitted when unset, same pattern as the existing `picked_by` handling)
+- [x] Mobile-responsive pass — all auth/books templates restyled with Tailwind (cards, responsive grid on the book list, etc.); see `docs/design-system.md` for the full per-file breakdown
 
 ### Phase 4 — Nice-to-Haves
 - [ ] Open Library API integration for auto-fill (cover/author)
