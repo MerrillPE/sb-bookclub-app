@@ -13,6 +13,13 @@ function fillBookFields({ title, author, cover_url, isbn }) {
   setValue("isbn", isbn);
 }
 
+function createSpinner() {
+  const spinner = document.createElement("span");
+  spinner.className = "inline-block h-4 w-4 rounded-full border-2 border-stone-300 border-t-amber-600 animate-spin";
+  spinner.setAttribute("aria-hidden", "true");
+  return spinner;
+}
+
 function makeCandidateButton(candidateData, className, label, onPick) {
   const button = document.createElement("button");
   button.type = "button";
@@ -22,15 +29,15 @@ function makeCandidateButton(candidateData, className, label, onPick) {
   return button;
 }
 
-function addCoverThumb(thumbs, candidate, coverUrl, pick) {
+function addCoverThumb(thumbs, candidate, coverEntry, pick) {
   const thumbButton = makeCandidateButton(
-    { ...candidate, cover_url: coverUrl },
+    { ...candidate, cover_url: coverEntry.cover_url, isbn: coverEntry.isbn },
     "block rounded border border-stone-200 overflow-hidden hover:border-amber-500",
     "",
     pick,
   );
   const img = document.createElement("img");
-  img.src = coverUrl;
+  img.src = coverEntry.cover_url;
   img.loading = "lazy";
   img.alt = `${candidate.title} cover option`;
   img.className = "h-16 w-auto";
@@ -92,21 +99,24 @@ function renderLookupCandidates(container, candidates) {
         thumbs.classList.toggle("hidden");
         if (loaded || thumbs.classList.contains("hidden")) return;
         loaded = true;
-        toggle.textContent = "Loading…";
+        toggle.disabled = true;
+        const spinner = createSpinner();
+        toggle.after(spinner);
         try {
           const response = await fetch(`/books/api/lookup/covers?work=${encodeURIComponent(candidate.work_key)}`);
           const data = await response.json();
           const covers = data.covers || [];
           if (!covers.length) {
             toggle.textContent = "No other covers found";
-            toggle.disabled = true;
-            return;
+            return; // stays disabled -- nothing more to load
           }
-          covers.forEach((coverUrl) => addCoverThumb(thumbs, candidate, coverUrl, pick));
-          toggle.textContent = "Show more covers";
+          covers.forEach((coverEntry) => addCoverThumb(thumbs, candidate, coverEntry, pick));
+          toggle.disabled = false;
         } catch (err) {
-          toggle.textContent = "Show more covers";
           loaded = false;
+          toggle.disabled = false;
+        } finally {
+          spinner.remove();
         }
       });
 
@@ -138,6 +148,8 @@ document.querySelectorAll("[data-book-lookup]").forEach((button) => {
     if (author) params.set("author", author);
 
     button.disabled = true;
+    const spinner = createSpinner();
+    button.after(spinner);
     try {
       const response = await fetch(`/books/api/lookup?${params.toString()}`);
       const data = await response.json();
@@ -151,6 +163,7 @@ document.querySelectorAll("[data-book-lookup]").forEach((button) => {
     } catch (err) {
       errorMessage.classList.remove("hidden");
     } finally {
+      spinner.remove();
       button.disabled = false;
     }
   });

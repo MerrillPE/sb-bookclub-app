@@ -114,7 +114,7 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 - [x] Mobile-responsive pass — all auth/books templates restyled with Tailwind (cards, responsive grid on the book list, etc.); see `docs/design-system.md` for the full per-file breakdown
 
 ### Phase 4 — Nice-to-Haves
-- [ ] Open Library API integration for auto-fill (cover/author)
+- [x] Open Library API integration for auto-fill (cover/author). ISBN lookup or a title/author fuzzy search (`GET /books/api/lookup` in `app/books/routes.py`) fills title/author/cover/isbn; a "Show more covers" picker per search candidate (`GET /books/api/lookup/covers`) fetches the matched work's other editions, filtered to English-language editions with real cover art (Open Library exposes no per-edition popularity signal to sort by — confirmed directly against the live API), each paired with its own edition's ISBN so picking an alternate cover can't leave a mismatched ISBN behind. Covers are requested at Open Library's `L` size preset for sharper rendering than the default `M`. Both fetches show an inline loading spinner; the add/edit form also gained a Cancel button and the app gained a site-wide page-navigation loading bar (`app/static/js/main.js`) for slower deployed-server round trips — see `CLAUDE.md`'s "Open Library auto-fill"/"Open Library cover picker" notes for the technical detail.
 - [ ] Stats page (who rates highest/lowest, most active reviewer)
 - [ ] "Picked by" / rotation tracking
 - [ ] Voting/nomination system for the next book
