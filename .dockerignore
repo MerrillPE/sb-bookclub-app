@@ -1,0 +1,13 @@
+venv/
+.venv/
+.git/
+.gitignore
+.scratch/
+.claude/
+node_modules/
+__pycache__/
+**/__pycache__/
+*.pyc
+instance/
+.env
+.env.*

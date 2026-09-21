@@ -68,3 +68,19 @@ CSS is built from Tailwind and the compiled output is committed to git, so you d
 npm install
 npx @tailwindcss/cli -i ./app/static/src/input.css -o ./app/static/css/output.css --watch
 ```
+
+## Deployment
+
+This app is deployed as a Docker container (gunicorn as the WSGI server) against a separate Postgres database, so app redeploys never touch the data. See `docs/deployment.md` for the full first-time Google Cloud Run + Neon setup runbook. Required production environment variables, beyond the local-dev ones above:
+
+- `SECRET_KEY` — same as local, but generate a fresh value for production, never reuse the dev one.
+- `SQLALCHEMY_DATABASE_URI` (or `DATABASE_URL`, whichever your Postgres host hands you) — a real `postgresql://...` connection string. Locally this is left unset, which is what triggers the SQLite fallback; in production it's required.
+- `FLASK_DEBUG=0` — must be off in production (it's `1` locally for the auto-reloader/debugger).
+- `OPEN_LIBRARY_CONTACT` — optional; a contact URL/email included in the Open Library API's `User-Agent` header. Falls back to a placeholder if unset, but Open Library asks for a real one on production traffic.
+
+To build and smoke-test the container locally before deploying:
+```
+docker build -t sb-bookclub-app .
+docker run -e SECRET_KEY=test -e SQLALCHEMY_DATABASE_URI=sqlite:////tmp/test.db -e FLASK_DEBUG=0 -p 8080:8080 sb-bookclub-app
+```
+Visit `http://localhost:8080`. This runs against a throwaway SQLite file, not Postgres — it's just confirming the image itself boots and serves correctly; `docs/deployment.md` covers wiring up the real production database.

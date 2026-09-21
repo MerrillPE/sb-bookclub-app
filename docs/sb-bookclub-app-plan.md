@@ -49,20 +49,20 @@ A web app for a 4-person book club to track books read, log individual ratings/c
 | Layer | Choice | Notes |
 |---|---|---|
 | Framework | **Flask** | Familiar language, plenty for this scale |
-| Database | **SQLite** to start (or Postgres via Supabase/Neon if you want it hosted separately) | SQLite is fine for 4 users; watch for hosts with ephemeral disks if you go this route |
+| Database | **Postgres via Neon** | Free tier with no hard expiration (unlike Render's free Postgres, which is deleted after 30 days) — data survives app redeploys since it's hosted separately from the app container |
 | ORM | **SQLAlchemy** (via Flask-SQLAlchemy) | Standard pairing with Flask |
 | Migrations | **Flask-Migrate** | Schema changes over time |
 | Auth | **Flask-Login** + Werkzeug's built-in password hashing | No need for a heavier auth library at this scale |
 | Forms | **Flask-WTF** | Validation + CSRF protection |
 | Frontend | **Jinja2 templates** + Tailwind CSS (CLI build, compiled to a static file) | Server-rendered, no separate frontend framework needed |
-| Hosting | **Render** or **Railway** | Flask-friendly, easy free/cheap tiers, can host Postgres alongside if needed |
+| Hosting | **Google Cloud Run** | Free tier (2M requests/month, scales to zero) comfortably covers a 4-person app; Docker-based deploy — see `docs/deployment.md` |
 | Book metadata (optional) | **Open Library API** | Free, no API key required, auto-fills cover/author |
 
-**Key decision:** SQLite vs. Postgres — SQLite means zero external setup (data is just a file), but needs a host with persistent disk. Postgres (via Supabase/Neon free tier) avoids that concern from day one at the cost of slightly more setup.
+**Key decision, resolved during deployment prep:** SQLite vs. Postgres — went with **Postgres via Neon**. SQLite would have meant zero external setup, but needs a host with persistent disk, which Cloud Run's containers don't provide across redeploys. Checked Cloud SQL (GCP-native Postgres) too, but its ~$30+/month baseline is disproportionate at this scale next to Neon's free tier. See `docs/deployment.md` for the full rationale and setup steps.
 
 **Key decision:** Tailwind CLI build vs. Play CDN (`<script src="cdn.tailwindcss.com">`) — the CDN script generates CSS client-side at runtime (extra JS execution, a flash of unstyled content, no purging of unused classes). Since "mobile-friendly" is an explicit requirement and mobile devices are more sensitive to that overhead (slower CPUs, variable network), use the Tailwind CLI to compile a small static CSS file ahead of time instead. One-time setup (`npm install tailwindcss @tailwindcss/cli` + a build command), no ongoing complexity. Tailwind v4 dropped `tailwind.config.js` in favor of CSS-first config (`@import "tailwindcss";`) and auto-detects template files, so there's no `content`/purge config to maintain either.
 
-**Key decision:** Commit the compiled `app/static/css/output.css` to git rather than gitignoring it — there's no build step configured on Render/Railway yet, so committing the compiled CSS means the deployed app serves real styles without needing `npm install`/a Tailwind build to run on the host. `node_modules/` itself is still gitignored (large, fully reproducible from `package.json`). Revisit this if a proper build pipeline gets added to deployment later.
+**Key decision:** Commit the compiled `app/static/css/output.css` to git rather than gitignoring it — the production Docker image (see `Dockerfile`) has no Node/Tailwind build stage, so committing the compiled CSS means the deployed app serves real styles without needing `npm install`/a Tailwind build to run at deploy time. `node_modules/` itself is still gitignored (large, fully reproducible from `package.json`). Revisit this if a proper build pipeline gets added to deployment later.
 
 ---
 

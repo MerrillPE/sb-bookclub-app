@@ -8,6 +8,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app.extensions import db, login_manager
 
 
+def _naive_utcnow():
+    """Timezone-naive UTC 'now' -- round-trips identically on SQLite (always drops tzinfo)
+    and Postgres TIMESTAMP WITHOUT TIME ZONE (naive by column type, not driver/session
+    behavior), without using the deprecated datetime.utcnow() (Python 3.12+)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 class BookStatus(enum.Enum):
     TO_BE_READ = "to_be_read"
     CURRENTLY_READING = "currently_reading"
@@ -39,7 +46,7 @@ def load_user(user_id):
 class Invite(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(64), unique=True, nullable=False, default=lambda: secrets.token_urlsafe(32))
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=_naive_utcnow)
     expires_at = db.Column(db.DateTime, nullable=True)
     used_at = db.Column(db.DateTime, nullable=True)
 
@@ -52,9 +59,10 @@ class Invite(db.Model):
 
     @property
     def is_expired(self):
-        # SQLite drops tzinfo on round-trip, so expires_at comes back naive even though it's
-        # stored as UTC -- compare against a naive UTC "now" rather than datetime.now(timezone.utc).
-        return self.expires_at is not None and self.expires_at < datetime.utcnow()
+        # expires_at is stored as naive UTC (see _naive_utcnow) -- compare against the same
+        # naive-UTC convention rather than datetime.now(timezone.utc), which would raise
+        # TypeError (offset-naive vs. offset-aware) when compared against this column.
+        return self.expires_at is not None and self.expires_at < _naive_utcnow()
 
     @property
     def status_label(self):
@@ -71,8 +79,8 @@ class PasswordReset(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     member_id = db.Column(db.Integer, db.ForeignKey("member.id"), nullable=False)
     token = db.Column(db.String(64), unique=True, nullable=False, default=lambda: secrets.token_urlsafe(32))
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    expires_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc) + timedelta(hours=24))
+    created_at = db.Column(db.DateTime, default=_naive_utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False, default=lambda: _naive_utcnow() + timedelta(hours=24))
     used_at = db.Column(db.DateTime, nullable=True)
 
     member = db.relationship("Member")
@@ -86,8 +94,8 @@ class PasswordReset(db.Model):
 
     @property
     def is_expired(self):
-        # SQLite drops tzinfo on round-trip -- compare naive UTC, same reasoning as Invite.is_expired.
-        return self.expires_at < datetime.utcnow()
+        # Naive-UTC comparison, same reasoning as Invite.is_expired.
+        return self.expires_at < _naive_utcnow()
 
     @property
     def status_label(self):
@@ -108,7 +116,7 @@ class Book(db.Model):
     isbn = db.Column(db.String(20))
     added_by_id = db.Column(db.Integer, db.ForeignKey("member.id"), nullable=False)
     picked_by_id = db.Column(db.Integer, db.ForeignKey("member.id")) # Allow to be set by admin for another member
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=_naive_utcnow)
     reading_start_date = db.Column(db.Date)
     reading_end_date = db.Column(db.Date)
     status = db.Column(db.Enum(BookStatus, create_constraint=True, name="ck_book_status"), nullable=False, default=BookStatus.TO_BE_READ)
@@ -141,7 +149,7 @@ class Rating(db.Model):
     member_id = db.Column(db.Integer, db.ForeignKey("member.id"), nullable=False)
     score = db.Column(db.Float, nullable=False)
     comment = db.Column(db.String(500))
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=_naive_utcnow)
 
     member = db.relationship("Member", back_populates="ratings")
     book = db.relationship("Book", back_populates="ratings")
