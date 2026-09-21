@@ -121,13 +121,50 @@ gcloud beta run domain-mappings describe --domain=sbbookclub.app --region=us-wes
 
 ## Redeploying
 
-**Code-only changes** (no schema change): just repeat step 4 (`gcloud builds submit` + `gcloud run deploy`). The Neon database is never touched by this — this is what makes redeploys safe for existing data.
+**Code-only changes** (no schema change): merging to `main` now deploys automatically (see "Continuous deployment" below). To do it manually instead — e.g. testing a build before merging — repeat step 4 (`gcloud builds submit` + `gcloud run deploy`). Either way, the Neon database is never touched by a code-only deploy — this is what makes redeploys safe for existing data.
 
-**Schema changes**: generate the migration locally as usual (`flask db migrate -m "..."`, review it, commit it), then repeat step 5 against the production database *in addition to* step 4, before or after deploying the new revision (order matters only if the new code depends on the new column/table existing — for an additive migration like a new nullable column, either order is safe).
+**Schema changes**: generate the migration locally as usual (`flask db migrate -m "..."`, review it, commit it), then run step 5 against the production database *in addition to* the deploy (automatic or manual), before or after (order matters only if the new code depends on the new column/table existing — for an additive migration like a new nullable column, either order is safe). The pipeline deliberately does **not** run migrations automatically — see below.
+
+## Continuous deployment (CI/CD)
+
+`.github/workflows/deploy.yml` builds and deploys automatically on every push to `main` — no manual `gcloud` invocation needed for ordinary code changes. Deliberately scoped to build+deploy only, matching the "Redeploying" split above: it never touches the database, so a bad deploy is just a bad revision (rollback-able), never data loss. Schema migrations stay a manual, deliberate step (see above) — CI auto-applying a bad migration to a 4-person app's only copy of its reading history was judged not worth the convenience.
+
+Authenticates via **Workload Identity Federation** rather than a stored service-account key — GitHub exchanges a short-lived OIDC token for GCP credentials on each run, so there's no long-lived secret to leak, rotate, or store in GitHub Secrets. Set up once, for reference/reproducibility:
+```
+# A pool + OIDC provider trusting GitHub's token issuer, scoped to this repo only
+gcloud iam workload-identity-pools create "github-pool" --project="sb-bookclub-app" --location="global"
+
+gcloud iam workload-identity-pools providers create-oidc "github-provider" \
+  --project="sb-bookclub-app" --location="global" --workload-identity-pool="github-pool" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref" \
+  --attribute-condition="assertion.repository=='MerrillPE/sb-bookclub-app'" \
+  --issuer-uri="https://token.actions.githubusercontent.com"
+
+# A dedicated deploy service account -- least-privilege, not the same as any human's account
+gcloud iam service-accounts create github-deployer --project="sb-bookclub-app"
+
+gcloud projects add-iam-policy-binding sb-bookclub-app \
+  --member="serviceAccount:github-deployer@sb-bookclub-app.iam.gserviceaccount.com" --role="roles/run.admin"
+gcloud projects add-iam-policy-binding sb-bookclub-app \
+  --member="serviceAccount:github-deployer@sb-bookclub-app.iam.gserviceaccount.com" --role="roles/artifactregistry.writer"
+# Deploying a revision requires "act as" permission on whatever SA the revision runs as
+gcloud iam service-accounts add-iam-policy-binding 342955994544-compute@developer.gserviceaccount.com \
+  --project="sb-bookclub-app" \
+  --member="serviceAccount:github-deployer@sb-bookclub-app.iam.gserviceaccount.com" --role="roles/iam.serviceAccountUser"
+
+# Let the GitHub repo (via the WIF provider) impersonate the deploy service account
+gcloud iam service-accounts add-iam-policy-binding github-deployer@sb-bookclub-app.iam.gserviceaccount.com \
+  --project="sb-bookclub-app" --role="roles/iam.workloadIdentityUser" \
+  --member="principalSet://iam.googleapis.com/projects/342955994544/locations/global/workloadIdentityPools/github-pool/attribute.repository/MerrillPE/sb-bookclub-app"
+```
+This has already been run for this project — the pool, provider, service account, and all four bindings exist. Nothing above needs to be re-run unless setting this up fresh elsewhere.
+
+The workflow itself builds the image directly on the GitHub Actions runner (`docker build`/`docker push`, not `gcloud builds submit`) and tags it with the commit SHA rather than a fixed tag — each deploy is traceable to an exact commit, and old SHA-tagged images double as rollback points (`gcloud run deploy sb-bookclub-app --image us-west1-docker.pkg.dev/sb-bookclub-app/sb-bookclub-app/sb-bookclub-app:<old-sha> --region us-west1` to roll back). Note `--set-env-vars` is deliberately absent from the deploy step: Cloud Run carries over the previous revision's environment variables when only `--image` is specified, so `SECRET_KEY`/`SQLALCHEMY_DATABASE_URI`/etc. never need to be duplicated into GitHub Secrets at all.
+
+**Committing and pushing `.github/workflows/deploy.yml` to `main` is what actually activates this** — GitHub only registers a workflow once it exists on the branch. Nothing deploys until that happens.
 
 ## Things to know
 
-- No CI/CD pipeline exists yet (e.g. auto-deploy on push to `main`) — every deploy above is a manual `gcloud` invocation. Worth adding later (GitHub Actions + `gcloud builds submit`/`gcloud run deploy`, or a Cloud Build trigger) once the manual flow feels repetitive, not before.
 - Consider setting a GCP budget alert — Cloud Run is usage-based, and while the free tier should cover this app's real traffic, it's cheap insurance against a surprise bill from unexpected load or a misconfiguration.
 - Static files (CSS/JS) are served directly by Flask — fine at this scale, no CDN needed.
 - Nothing in this app assumes a writable local disk beyond the SQLite fallback path (unused once `SQLALCHEMY_DATABASE_URI` is set) — cover images are always external URLs (`Book.cover_url`), never downloaded/cached locally, so there's nothing here that Cloud Run's ephemeral filesystem would break.

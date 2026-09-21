@@ -1,0 +1,55 @@
+name: Deploy to Cloud Run
+
+# Code-only deploys, matching docs/deployment.md's "Redeploying" split: this pipeline only
+# builds + deploys the new image. It never touches the database. Schema changes still need
+# `flask db upgrade` run manually against Neon, as documented there -- deliberately not
+# automated, so a bad migration can't reach production without a human in the loop.
+on:
+  push:
+    branches: [main]
+
+env:
+  PROJECT_ID: sb-bookclub-app
+  REGION: us-west1
+  SERVICE: sb-bookclub-app
+  REPOSITORY: sb-bookclub-app
+
+permissions:
+  contents: read
+  id-token: write # required for Workload Identity Federation -- no service-account key is stored anywhere
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/342955994544/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deployer@sb-bookclub-app.iam.gserviceaccount.com
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build image
+        run: docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }} .
+
+      - name: Push image
+        run: docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}
+
+      # No --set-env-vars here: Cloud Run carries over the previous revision's env vars
+      # (SECRET_KEY, SQLALCHEMY_DATABASE_URI, etc.) when only --image is specified, so none
+      # of the app's actual secrets need to be duplicated into GitHub Secrets.
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE }} \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --quiet

@@ -14,6 +14,7 @@ Phases 0–3 of `docs/sb-bookclub-app-plan.md`'s task breakdown are complete: ap
 - Rebuild Tailwind CSS after editing templates or classes: `npx @tailwindcss/cli -i ./app/static/src/input.css -o ./app/static/css/output.css --minify` (swap `--minify` for `--watch` during active template work — compiled CSS is committed to git, so forgetting to rebuild means styling changes silently don't appear)
 - Build/run the production Docker image locally: `docker build -t sb-bookclub-app .` then `docker run -e SECRET_KEY=... -e SQLALCHEMY_DATABASE_URI=... -e FLASK_DEBUG=0 -p 8080:8080 sb-bookclub-app` — see `docs/deployment.md` for the full Cloud Run + Neon deploy runbook
 - Apply a migration to the production database: point `SQLALCHEMY_DATABASE_URI` at the production Postgres URL and run `flask db upgrade` from your own machine (Cloud Run has no release-phase hook) — see `docs/deployment.md`
+- Code-only changes deploy automatically on push to `main` via `.github/workflows/deploy.yml` (Workload Identity Federation, no stored credentials) — schema changes still need the manual migration step above, deliberately not automated; see `docs/deployment.md`'s "Continuous deployment" section
 - No automated test suite exists yet. No linter/formatter is configured (pylint/black were discussed but never installed).
 
 ## Architecture
