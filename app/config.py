@@ -18,3 +18,9 @@ class Config:
     SQLALCHEMY_DATABASE_URI = _normalize_db_uri(
         os.environ.get("SQLALCHEMY_DATABASE_URI") or os.environ.get("DATABASE_URL")
     ) or f"sqlite:///{BASE_DIR / 'instance' / 'app.db'}"
+    # Neon (like most managed/serverless Postgres) closes idle connections server-side, and a
+    # low-traffic app like this one leaves pooled connections idle often enough to hit it --
+    # without this, SQLAlchemy can hand out an already-dead connection and the query fails with
+    # "SSL connection has been closed unexpectedly". pre_ping tests each connection before use
+    # and transparently reconnects instead. Harmless no-op on SQLite (local dev).
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
