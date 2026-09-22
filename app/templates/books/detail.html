@@ -1,40 +1,50 @@
-{% from "_macros.html" import form_field, status_badge, star_rating, rating_card %}
+{% from "_macros.html" import form_field, score_field, status_badge, star_rating, rating_card %}
 {% extends "base.html" %}
 {% block content %}
 <div class="flex items-center justify-between mb-4">
     {% if newer_book %}
-        <a href="{{ url_for('books.book_detail', book_id=newer_book.id) }}" class="text-sm text-stone-600 hover:text-stone-900">‹ Newer</a>
+        <a href="{{ url_for('books.book_detail', book_id=newer_book.id) }}" class="text-sm text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100">‹ Newer</a>
     {% else %}
         <span></span>
     {% endif %}
     {% if older_book %}
-        <a href="{{ url_for('books.book_detail', book_id=older_book.id) }}" class="text-sm text-stone-600 hover:text-stone-900">Older ›</a>
+        <a href="{{ url_for('books.book_detail', book_id=older_book.id) }}" class="text-sm text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100">Older ›</a>
     {% else %}
         <span></span>
     {% endif %}
 </div>
-<div class="flex gap-6 items-start">
+<div class="flex gap-6 items-center">
     {% if book.cover_url %}
         <img src="{{ book.cover_url }}" alt="" class="w-32 sm:w-40 aspect-[2/3] object-cover rounded-lg shadow-sm flex-none">
     {% else %}
-        <div class="w-32 sm:w-40 aspect-[2/3] bg-stone-100 flex items-center justify-center text-stone-400 text-sm rounded-lg flex-none">No cover</div>
+        <div class="w-32 sm:w-40 aspect-[2/3] bg-surface-muted flex items-center justify-center text-stone-400 text-sm rounded-lg flex-none">No cover</div>
     {% endif %}
     <div>
-        <h1 class="text-3xl font-serif font-semibold text-stone-900">{{ book.name }}</h1>
-        <p class="text-stone-500">{{ book.author }}</p>
+        <h1 class="text-3xl font-serif font-semibold text-text-primary">{{ book.name }}</h1>
+        <p class="text-stone-500 dark:text-stone-400">{{ book.author }}</p>
         <div class="mt-2 flex items-center gap-3">
             {{ status_badge(book.status.value, book.status_label) }}
             {% if book.is_finished and book.average_rating %}{{ star_rating(book.average_rating) }}{% endif %}
         </div>
-        {% if book.picked_by %}<p class="mt-2 text-sm text-stone-600">Picked by {{ book.picked_by.display_name }}</p>{% endif %}
-        {% if book.reading_start_date %}<p class="text-sm text-stone-600">Started {{ book.reading_start_date.strftime('%b %-d, %Y') }}</p>{% endif %}
-        {% if book.reading_end_date %}<p class="text-sm text-stone-600">Finished {{ book.reading_end_date.strftime('%b %-d, %Y') }}</p>{% endif %}
+        {% if book.picked_by %}<p class="mt-2 text-sm"><span class="text-xs text-stone-500 dark:text-stone-400">Picked by</span> <span class="text-text-primary">{{ book.picked_by.display_name }}</span></p>{% endif %}
+        {% if book.reading_start_date %}<p class="text-sm"><span class="text-xs text-stone-500 dark:text-stone-400">Start</span> <span class="text-text-primary">{{ book.reading_start_date.strftime('%b %-d, %Y') }}</span></p>{% endif %}
+        {% if book.reading_end_date %}<p class="text-sm"><span class="text-xs text-stone-500 dark:text-stone-400">Finish</span> <span class="text-text-primary">{{ book.reading_end_date.strftime('%b %-d, %Y') }}</span></p>{% endif %}
         {% if current_user.id == book.picked_by_id or current_user.is_admin %}
         <div class="flex gap-2 mt-4">
-            <a href="{{ url_for('books.edit_book', book_id=book.id) }}" class="inline-flex items-center rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-800">Edit</a>
+            <a href="{{ url_for('books.edit_book', book_id=book.id) }}" aria-label="Edit book" title="Edit book"
+               class="inline-flex items-center justify-center rounded-md bg-btn-primary p-2 text-white shadow-sm hover:bg-btn-primary-hover">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793ZM11.379 5.793 3 14.172V17h2.828l8.38-8.379-2.83-2.828Z" />
+                </svg>
+            </a>
             <form method="POST" action="{{ url_for('books.delete_book', book_id=book.id) }}">
                 {{ delete_form.hidden_tag() }}
-                <button type="submit" class="inline-flex items-center rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-rose-700">Delete</button>
+                <button type="submit" aria-label="Delete book" title="Delete book"
+                        class="inline-flex items-center justify-center rounded-md bg-btn-danger p-2 text-white shadow-sm hover:bg-btn-danger-hover">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">
+                        <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" />
+                    </svg>
+                </button>
             </form>
         </div>
         {% endif %}
@@ -42,7 +52,7 @@
 </div>
 
 {% if book.is_finished %}
-<h2 class="text-xl font-serif font-semibold text-stone-900 mt-8 mb-4">Ratings</h2>
+<h2 class="text-xl font-serif font-semibold text-text-primary mt-8 mb-4">Ratings</h2>
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
     {% if existing_rating %}
@@ -50,14 +60,14 @@
         <div data-inline-edit-view>
             {{ rating_card(existing_rating, own=True) }}
         </div>
-        <div data-inline-edit-panel class="hidden bg-white border border-stone-200 rounded-lg shadow-sm p-4">
+        <div data-inline-edit-panel class="hidden bg-surface border border-border-subtle rounded-lg shadow-sm p-4">
             <form method="POST">
                 {{ form.hidden_tag() }}
-                {{ form_field(form.score) }}
+                {{ score_field(form.score) }}
                 {{ form_field(form.comment) }}
                 <div class="flex gap-2">
-                    <button type="submit" class="inline-flex items-center rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-800">Submit Review</button>
-                    <button type="button" data-inline-edit-cancel class="inline-flex items-center rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">Cancel</button>
+                    <button type="submit" class="inline-flex items-center rounded-md bg-btn-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-btn-primary-hover">Submit Review</button>
+                    <button type="button" data-inline-edit-cancel class="inline-flex items-center rounded-md border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-muted">Cancel</button>
                 </div>
             </form>
         </div>
@@ -71,18 +81,18 @@
     {% endfor %}
 
     {% if not book.ratings %}
-        <p class="text-sm text-stone-500 col-span-full">No ratings yet.</p>
+        <p class="text-sm text-stone-500 dark:text-stone-400 col-span-full">No ratings yet.</p>
     {% endif %}
 </div>
 
 {% if not existing_rating %}
-<div class="max-w-sm bg-white border border-stone-200 rounded-lg shadow-sm p-6 mt-6">
-    <h3 class="text-lg font-serif font-semibold text-stone-900 mb-4">Your Rating</h3>
+<div class="max-w-sm bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mt-6">
+    <h3 class="text-lg font-serif font-semibold text-text-primary mb-4">Your Rating</h3>
     <form method="POST">
         {{ form.hidden_tag() }}
-        {{ form_field(form.score) }}
+        {{ score_field(form.score) }}
         {{ form_field(form.comment) }}
-        <button type="submit" class="inline-flex items-center rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-800">Submit Review</button>
+        <button type="submit" class="inline-flex items-center rounded-md bg-btn-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-btn-primary-hover">Submit Review</button>
     </form>
 </div>
 {% endif %}
