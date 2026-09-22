@@ -20,11 +20,11 @@
 }
 
 :root {
-    --page-bg: #F7F0DD;
+    --page-bg: #FBF7EC;
     --surface: var(--color-white);
     --surface-muted: var(--color-stone-50);
-    --nav-bg: #3B2A20;
-    --nav-fg: var(--color-white);
+    --nav-bg: var(--page-bg);
+    --nav-fg: var(--text-primary);
     --border-subtle: var(--color-stone-200);
     --text-primary: var(--color-stone-900);
     --text-secondary: var(--color-stone-600);
@@ -39,8 +39,8 @@
     --page-bg: #1C1712;
     --surface: var(--color-stone-800);
     --surface-muted: var(--color-stone-800);
-    --nav-bg: #120C08;
-    --nav-fg: var(--color-stone-100);
+    --nav-bg: var(--page-bg);
+    --nav-fg: var(--text-primary);
     --border-subtle: var(--color-stone-700);
     --text-primary: var(--color-stone-100);
     --text-secondary: var(--color-stone-400);

@@ -48,7 +48,7 @@ function addCoverThumb(thumbs, candidate, coverEntry, pick) {
   img.src = coverEntry.cover_url;
   img.loading = "lazy";
   img.alt = `${candidate.title} cover option`;
-  img.className = "h-16 w-auto";
+  img.className = "w-full aspect-[2/3] object-cover";
   // Open Library can still return a 200 with a 1x1 placeholder GIF for an edition
   // its own metadata claims has a cover, so a load error alone won't catch it --
   // check actual pixel size as a defense-in-depth backstop.
@@ -95,7 +95,7 @@ function renderLookupCandidates(container, candidates) {
 
     if (candidate.work_key) {
       const thumbs = document.createElement("div");
-      thumbs.className = "hidden mt-1 flex flex-wrap gap-2";
+      thumbs.className = "hidden mt-1 grid grid-cols-6 gap-2";
 
       const toggle = document.createElement("button");
       toggle.type = "button";
