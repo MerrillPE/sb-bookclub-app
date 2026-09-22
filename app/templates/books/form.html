@@ -14,15 +14,17 @@
                     class="inline-flex items-center rounded-md border border-stone-300 dark:border-stone-600 bg-surface px-3 py-1.5 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-muted">
                 Look up on Open Library
             </button>
-            <p data-book-lookup-error class="hidden mt-1 text-sm text-stone-500 dark:text-stone-400">No match found &mdash; enter details manually.</p>
+            <p data-book-lookup-error class="hidden mt-1 text-sm text-text-secondary">No match found &mdash; enter details manually.</p>
             <div data-book-lookup-candidates class="hidden mt-2 space-y-2"></div>
         </div>
         {{ form_field(form.status) }}
         {% if current_user.is_admin %}
             {{ form_field(form.picked_by) }}
         {% endif %}
-        {{ form_field(form.reading_start_date) }}
-        {{ form_field(form.reading_end_date) }}
+        <div class="flex gap-4">
+            {{ form_field(form.reading_start_date, width_class="flex-1") }}
+            {{ form_field(form.reading_end_date, width_class="flex-1") }}
+        </div>
         <div class="flex items-center gap-3">
             <button type="submit" class="inline-flex items-center rounded-md bg-btn-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-btn-primary-hover">Save Book</button>
             <a href="{{ url_for('books.book_detail', book_id=book.id) if book else url_for('books.index') }}"

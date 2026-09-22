@@ -1,0 +1,27 @@
+# Curated word list for human-readable invite tokens (see Invite.token in app/models.py).
+# Short, common, unambiguously-spelled words only -- easy to read aloud, type, or hand-write.
+INVITE_WORDS = [
+    "maple", "otter", "brave", "cedar", "quiet", "amber", "coral", "swift",
+    "willow", "gentle", "meadow", "harbor", "ember", "frost", "clover", "raven",
+    "birch", "candle", "cliff", "dawn", "dusk", "eagle", "ferry", "forest",
+    "garden", "glacier", "grove", "harvest", "hazel", "hollow", "honey", "ivory",
+    "jasper", "juniper", "lagoon", "lantern", "linen", "lotus", "lumen", "lynx",
+    "marble", "marsh", "meadowlark", "mint", "misty", "moss", "nectar", "oasis",
+    "olive", "opal", "orchard", "pebble", "pepper", "petal", "pine", "plum",
+    "pond", "poppy", "quartz", "quail", "rabbit", "ridge", "river", "robin",
+    "rustic", "saffron", "sage", "sandal", "shadow", "shore", "silver", "sparrow",
+    "spruce", "stone", "storm", "summit", "sunny", "swallow", "tawny", "thicket",
+    "thistle", "thyme", "tidal", "timber", "topaz", "trail", "tulip", "tundra",
+    "valley", "velvet", "violet", "walnut", "warbler", "wheat", "wild", "windy",
+    "wren", "anchor", "aspen", "autumn", "bamboo", "basil", "bayou",
+    "beacon", "beech", "berry", "blossom", "bluff", "bramble", "breeze", "brook",
+    "canyon", "cascade", "cedarwood", "cherry", "chestnut", "cinder", "coastal",
+    "cobalt", "comet", "copper", "cove", "crane", "creek", "crimson", "crocus",
+    "crystal", "daisy", "delta", "denim", "dew", "dune", "eclipse", "elder",
+    "elm", "falcon", "feather", "fennel", "fern", "fig", "finch", "flint",
+    "fog", "fox", "fuchsia", "galaxy", "gale", "glen", "gold", "granite",
+    "grape", "gravel", "green", "gull", "gum", "harmony", "hawk", "heather",
+    "hedge", "heron", "hickory", "hillside", "horizon", "hummingbird", "ibex", "indigo",
+    "iris", "island", "jade", "kelp", "kestrel", "lake", "larch", "laurel",
+    "lavender", "leaf", "lemon", "lichen", "lilac", "lily", "lime", "loch",
+]

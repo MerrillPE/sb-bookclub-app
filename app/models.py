@@ -6,6 +6,7 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.extensions import db, login_manager
+from app.invite_words import INVITE_WORDS
 
 
 def _naive_utcnow():
@@ -13,6 +14,10 @@ def _naive_utcnow():
     and Postgres TIMESTAMP WITHOUT TIME ZONE (naive by column type, not driver/session
     behavior), without using the deprecated datetime.utcnow() (Python 3.12+)."""
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _generate_invite_token():
+    return "-".join(secrets.choice(INVITE_WORDS) for _ in range(3))
 
 
 class BookStatus(enum.Enum):
@@ -45,7 +50,7 @@ def load_user(user_id):
 
 class Invite(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    token = db.Column(db.String(64), unique=True, nullable=False, default=lambda: secrets.token_urlsafe(32))
+    token = db.Column(db.String(64), unique=True, nullable=False, default=_generate_invite_token)
     created_at = db.Column(db.DateTime, default=_naive_utcnow)
     expires_at = db.Column(db.DateTime, nullable=True)
     used_at = db.Column(db.DateTime, nullable=True)
