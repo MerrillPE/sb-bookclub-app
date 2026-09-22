@@ -52,3 +52,20 @@ function initPageLoadingBar() {
 }
 
 initPageLoadingBar();
+
+// Site-wide chrome (the toggle button lives in base.html's navbar), so it's initialized
+// here rather than in a blueprint file -- see docs/js-architecture.md. The initial theme
+// itself is set by a blocking inline script in base.html's <head> to avoid a flash of the
+// wrong theme on load; this just wires up the toggle click and persists the choice.
+function initThemeToggle() {
+  const toggle = document.querySelector("[data-theme-toggle]");
+  if (!toggle) return;
+
+  toggle.addEventListener("click", () => {
+    const dark = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", dark);
+    localStorage.setItem("theme", dark ? "dark" : "light");
+  });
+}
+
+initThemeToggle();

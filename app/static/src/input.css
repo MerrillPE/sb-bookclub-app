@@ -1,5 +1,52 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
     --font-serif: "Lora", serif;
+    --color-page-bg: var(--page-bg);
+    --color-surface: var(--surface);
+    --color-surface-muted: var(--surface-muted);
+    --color-nav-bg: var(--nav-bg);
+    --color-nav-fg: var(--nav-fg);
+    --color-border-subtle: var(--border-subtle);
+    --color-text-primary: var(--text-primary);
+    --color-text-secondary: var(--text-secondary);
+    --color-btn-primary: var(--btn-primary);
+    --color-btn-primary-hover: var(--btn-primary-hover);
+    --color-btn-danger: var(--btn-danger);
+    --color-btn-danger-hover: var(--btn-danger-hover);
+    --color-input-bg: var(--input-bg);
+}
+
+:root {
+    --page-bg: #F7F0DD;
+    --surface: var(--color-white);
+    --surface-muted: var(--color-stone-50);
+    --nav-bg: #3B2A20;
+    --nav-fg: var(--color-white);
+    --border-subtle: var(--color-stone-200);
+    --text-primary: var(--color-stone-900);
+    --text-secondary: var(--color-stone-600);
+    --btn-primary: #C1622D;
+    --btn-primary-hover: #A14F22;
+    --btn-danger: #DC2626;
+    --btn-danger-hover: #B91C1C;
+    --input-bg: var(--color-stone-100);
+}
+
+.dark {
+    --page-bg: #1C1712;
+    --surface: var(--color-stone-800);
+    --surface-muted: var(--color-stone-800);
+    --nav-bg: #120C08;
+    --nav-fg: var(--color-stone-100);
+    --border-subtle: var(--color-stone-700);
+    --text-primary: var(--color-stone-100);
+    --text-secondary: var(--color-stone-400);
+    --btn-primary: #D97D46;
+    --btn-primary-hover: #C16530;
+    --btn-danger: #F87171;
+    --btn-danger-hover: #EF4444;
+    --input-bg: var(--color-stone-700);
 }

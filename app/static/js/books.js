@@ -2,6 +2,14 @@ import { initDropdown } from "./utils.js";
 
 initDropdown("[data-filter-toggle]", "[data-filter-menu]");
 
+document.querySelectorAll("[data-score-select]").forEach((select) => {
+  const fill = select.parentElement.querySelector("[data-star-fill]");
+  if (!fill) return;
+  select.addEventListener("change", () => {
+    fill.style.width = `${(parseFloat(select.value) / 5) * 100}%`;
+  });
+});
+
 function fillBookFields({ title, author, cover_url, isbn }) {
   const setValue = (id, value) => {
     const field = document.getElementById(id);
@@ -32,7 +40,7 @@ function makeCandidateButton(candidateData, className, label, onPick) {
 function addCoverThumb(thumbs, candidate, coverEntry, pick) {
   const thumbButton = makeCandidateButton(
     { ...candidate, cover_url: coverEntry.cover_url, isbn: coverEntry.isbn },
-    "block rounded border border-stone-200 overflow-hidden hover:border-amber-500",
+    "block rounded border border-stone-200 dark:border-stone-600 overflow-hidden hover:border-amber-500",
     "",
     pick,
   );
@@ -64,7 +72,7 @@ function renderLookupCandidates(container, candidates) {
     const year = candidate.year ? ` (${candidate.year})` : "";
     const mainButton = makeCandidateButton(
       candidate,
-      "flex items-center gap-3 w-full text-left rounded-md border border-stone-200 px-3 py-2 text-sm hover:bg-stone-50",
+      "flex items-center gap-3 w-full text-left rounded-md border border-stone-200 dark:border-stone-600 px-3 py-2 text-sm text-text-secondary hover:bg-surface-muted",
       "",
       pick,
     );
