@@ -12,7 +12,7 @@
             <div class="mt-1 flex items-center gap-2">
                 {{ form.expires_at(class="block w-full rounded-md bg-input-bg border-stone-300 dark:border-stone-600 dark:text-text-primary shadow-sm
                 focus:border-amber-600 focus:ring-amber-600 sm:text-sm") }}
-                <button type="button" data-clear-target="expires_at" class="flex-none text-sm text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 underline">Clear</button>
+                <button type="button" data-clear-target="expires_at" class="flex-none text-sm text-text-secondary hover:text-stone-700 dark:hover:text-stone-200 underline">Clear</button>
             </div>
             {% if form.expires_at.errors %}
                 {% for error in form.expires_at.errors %}
@@ -29,9 +29,9 @@
     <div class="bg-surface border border-border-subtle rounded-lg shadow-sm p-4">
         <div class="flex items-start justify-between gap-2">
             <div>
-                <p class="text-sm text-stone-500 dark:text-stone-400">Created {{ invite.created_at.strftime("%b %-d, %Y") }}</p>
+                <p class="text-sm text-text-secondary">Created {{ invite.created_at.strftime("%b %-d, %Y") }}</p>
                 {% if invite.expires_at %}
-                    <p class="text-sm text-stone-500 dark:text-stone-400">Expires {{ invite.expires_at.strftime("%b %-d, %Y") }}</p>
+                    <p class="text-sm text-text-secondary">Expires {{ invite.expires_at.strftime("%b %-d, %Y") }}</p>
                 {% endif %}
             </div>
             {{ invite_status_badge(invite.status_label) }}
@@ -40,20 +40,20 @@
             {% set registration_url = url_for('auth.register', token=invite.token, _external=True) %}
             <div class="mt-3 flex items-center justify-between gap-2">
                 <p class="text-sm text-stone-600 dark:text-stone-400 break-all font-mono">{{ registration_url }}</p>
-                <button type="button" data-copy-value="{{ registration_url }}" class="flex-none text-sm text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 underline">Copy link</button>
+                <button type="button" data-copy-value="{{ registration_url }}" class="flex-none text-sm text-text-secondary hover:text-stone-700 dark:hover:text-stone-200 underline">Copy link</button>
             </div>
             <div class="mt-2 flex items-center justify-between gap-2">
                 <p class="text-sm text-stone-600 dark:text-stone-400 break-all font-mono">{{ invite.token }}</p>
-                <button type="button" data-copy-value="{{ invite.token }}" class="flex-none text-sm text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 underline">Copy token</button>
+                <button type="button" data-copy-value="{{ invite.token }}" class="flex-none text-sm text-text-secondary hover:text-stone-700 dark:hover:text-stone-200 underline">Copy token</button>
             </div>
-            <form method="POST" action="{{ url_for('admin.revoke_invite', invite_id=invite.id) }}" class="mt-3">
+            <form method="POST" action="{{ url_for('admin.revoke_invite', invite_id=invite.id) }}" class="mt-3" data-confirm="Revoke this invite? This cannot be undone.">
                 {{ revoke_form.hidden_tag() }}
                 <button type="submit" class="inline-flex items-center rounded-md bg-btn-danger px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-btn-danger-hover">Revoke</button>
             </form>
         {% endif %}
     </div>
   {% else %}
-    <p class="text-stone-500 dark:text-stone-400">No invites yet.</p>
+    <p class="text-text-secondary">No invites yet.</p>
   {% endfor %}
 </div>
 {% endblock content %}

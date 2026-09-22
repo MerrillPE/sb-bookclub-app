@@ -2,11 +2,44 @@ import { initDropdown } from "./utils.js";
 
 initDropdown("[data-filter-toggle]", "[data-filter-menu]");
 
-document.querySelectorAll("[data-score-select]").forEach((select) => {
-  const fill = select.parentElement.querySelector("[data-star-fill]");
-  if (!fill) return;
+document.querySelectorAll("[data-star-picker]").forEach((picker) => {
+  const wrapper = picker.parentElement;
+  const select = wrapper.querySelector("[data-score-select]");
+  const fill = picker.querySelector("[data-star-fill]");
+  const display = wrapper.querySelector("[data-score-display]");
+  if (!select || !fill || !display) return;
+
+  const applyValue = (value) => {
+    const clamped = Math.max(1, Math.min(5, value));
+    select.value = clamped.toFixed(1);
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+
+  const valueFromPointer = (clientX) => {
+    const rect = picker.getBoundingClientRect();
+    const fraction = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    return Math.round(fraction * 5 * 2) / 2;
+  };
+
+  picker.addEventListener("pointerdown", (event) => {
+    picker.setPointerCapture(event.pointerId);
+    applyValue(valueFromPointer(event.clientX));
+  });
+  picker.addEventListener("pointermove", (event) => {
+    if (!picker.hasPointerCapture(event.pointerId)) return;
+    applyValue(valueFromPointer(event.clientX));
+  });
+  picker.addEventListener("pointerup", (event) => {
+    if (picker.hasPointerCapture(event.pointerId)) picker.releasePointerCapture(event.pointerId);
+  });
+
+  // Keeps the visual widget in sync whether the change came from a pointer drag above
+  // (which dispatches "change" itself) or from native keyboard interaction with the
+  // still-real, still-focusable (but visually sr-only) <select>.
   select.addEventListener("change", () => {
-    fill.style.width = `${(parseFloat(select.value) / 5) * 100}%`;
+    const value = parseFloat(select.value);
+    fill.style.width = `${(value / 5) * 100}%`;
+    display.textContent = value.toFixed(1);
   });
 });
 

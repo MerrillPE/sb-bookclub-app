@@ -35,7 +35,7 @@
                 <div class="flex items-center justify-between gap-2">
                     <button type="submit" class="inline-flex items-center rounded-md bg-btn-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-btn-primary-hover">Apply</button>
                     {% if selected_status or selected_sort != "reading_first" %}
-                        <a href="{{ url_for('books.index') }}" class="text-sm text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 underline">Clear</a>
+                        <a href="{{ url_for('books.index') }}" class="text-sm text-text-secondary hover:text-stone-700 dark:hover:text-stone-200 underline">Clear</a>
                     {% endif %}
                 </div>
             </form>
@@ -46,7 +46,7 @@
   {% for book in books %}
     {{ book_card(book, highlighted=(book.status.name == "CURRENTLY_READING")) }}
   {% else %}
-    <p class="text-stone-500 dark:text-stone-400 col-span-full">No books match this filter.</p>
+    <p class="text-text-secondary col-span-full">No books match this filter.</p>
   {% endfor %}
 </div>
 {% endblock content %}

@@ -9,6 +9,21 @@ initDropdown("[data-user-menu-toggle]", "[data-user-menu]");
 // duplicated in each blueprint file -- see docs/js-architecture.md.
 document.querySelectorAll("[data-inline-edit]").forEach(initInlineEditToggle);
 
+// Site-wide chrome: a generic confirm-before-submit hook for destructive forms, driven by
+// a data-confirm attribute -- see docs/js-architecture.md. Registered before
+// initPageLoadingBar() so its preventDefault() is visible to that handler's own submit
+// listener (bubble-phase listeners run in registration order).
+function initConfirmDialogs() {
+  document.addEventListener("submit", (event) => {
+    const message = event.target.dataset.confirm;
+    if (message && !window.confirm(message)) {
+      event.preventDefault();
+    }
+  });
+}
+
+initConfirmDialogs();
+
 // Site-wide chrome (the #page-loading-bar element lives in base.html), so it's initialized
 // here rather than in a blueprint file -- see docs/js-architecture.md.
 function initPageLoadingBar() {

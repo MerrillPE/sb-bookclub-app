@@ -300,3 +300,14 @@ def delete_book(book_id):
     db.session.delete(book)
     db.session.commit()
     return redirect(url_for("books.index"))
+
+
+@bp.route("/<int:book_id>/rating/delete", methods=["POST"])
+@login_required
+def delete_rating(book_id):
+    if not DeleteForm().validate_on_submit():
+        abort(400)
+    rating = Rating.query.filter_by(book_id=book_id, member_id=current_user.id).first_or_404()
+    db.session.delete(rating)
+    db.session.commit()
+    return redirect(url_for("books.book_detail", book_id=book_id))
