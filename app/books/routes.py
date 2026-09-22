@@ -92,7 +92,7 @@ def _open_library_candidate(doc, fallback_isbn=""):
     cover_i = doc.get("cover_i")
     return {
         "title": doc.get("title", ""),
-        "author": ", ".join(doc.get("author_name", [])),
+        "author": (doc.get("author_name") or [""])[0],
         "year": doc.get("first_publish_year"),
         "cover_url": f"https://covers.openlibrary.org/b/id/{cover_i}-L.jpg" if cover_i else "",
         "isbn": fallback_isbn or (doc.get("isbn") or [""])[0],
@@ -183,7 +183,7 @@ def lookup_covers():
             "cover_url": f"https://covers.openlibrary.org/b/id/{cover_ids[0]}-L.jpg",
             "isbn": isbns[0] if isbns else "",
         })
-        if len(covers) >= 8:
+        if len(covers) >= 12:
             break
     return jsonify({"covers": covers})
 
