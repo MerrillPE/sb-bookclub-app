@@ -1,15 +1,15 @@
 {% from "_macros.html" import form_field %}
-{% extends "base.html" %}
-{% block content %}
-<div class="max-w-sm mx-auto bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-    <h1 class="text-2xl font-serif font-semibold text-text-primary mb-4">Register</h1>
+{% extends "auth/_layout.html" %}
+{% block title %}Join the club · Spine Busters Book Club{% endblock %}
+{% block auth_card %}
+    <p class="eyebrow">You're invited</p>
+    <h1 class="mt-2 font-serif text-3xl font-semibold tracking-tight text-text-primary">Join the club</h1>
+    <p class="mt-1 mb-7 text-sm">Pick a username and password &mdash; your username is how the club will see you.</p>
     <form method="POST">
         {{ form.hidden_tag() }}
-        {{ form_field(form.username) }}
-        {{ form_field(form.password) }}
-        {{ form_field(form.confirm_password) }}
-        <button type="submit" class="inline-flex items-center rounded-md bg-btn-primary px-4 py-2 text-sm font-medium
-         text-white shadow-sm hover:bg-btn-primary-hover">Register</button>
+        {{ form_field(form.username, autocomplete="username") }}
+        {{ form_field(form.password, autocomplete="new-password") }}
+        {{ form_field(form.confirm_password, autocomplete="new-password") }}
+        <button type="submit" class="btn btn-primary mt-1 w-full py-2.5">Create my account</button>
     </form>
-</div>
-{% endblock content %}
+{% endblock auth_card %}

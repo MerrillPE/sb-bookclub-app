@@ -35,7 +35,7 @@ def invites():
         if form.expires_at.data:
             expires_at = datetime.combine(form.expires_at.data, datetime.max.time()).replace(tzinfo=timezone.utc)
         Invite.create(expires_at=expires_at)
-        flash("Invite created.")
+        flash("Invite created.", "success")
         return redirect(url_for("admin.invites"))
 
     all_invites = Invite.query.order_by(Invite.created_at.desc()).all()
@@ -56,7 +56,7 @@ def revoke_invite(invite_id):
         abort(400)
     invite = Invite.query.get_or_404(invite_id)
     if invite.used_at is not None:
-        flash("Can't revoke an invite that's already been used.")
+        flash("Can't revoke an invite that's already been used.", "error")
         return redirect(url_for("admin.invites"))
     db.session.delete(invite)
     db.session.commit()
@@ -89,5 +89,5 @@ def generate_reset(member_id):
     member = Member.query.get_or_404(member_id)
     PasswordReset.query.filter_by(member_id=member.id, used_at=None).delete()
     PasswordReset.create(member)
-    flash(f"Reset link generated for {member.display_name}.")
+    flash(f"Reset link generated for {member.display_name}.", "success")
     return redirect(url_for("admin.members"))

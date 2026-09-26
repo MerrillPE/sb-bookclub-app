@@ -1,0 +1,55 @@
+{% from "_macros.html" import avatar, book_cover %}
+{% extends "base.html" %}
+{% block title %}Members · Spine Busters Book Club{% endblock %}
+{% block content %}
+<header class="mb-10">
+    <p class="eyebrow">The Spine Busters Book Club</p>
+    <h1 class="mt-2 font-serif text-5xl font-semibold tracking-tight text-text-primary sm:text-7xl">Members</h1>
+    <p class="mt-3 max-w-xl">Who's in the club, the books they've brought to the table, and how they tend to score them.</p>
+</header>
+
+<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    {% for card in cards %}
+        {% set member = card.member %}
+        <a href="{{ url_for('members.profile', member_id=member.id) }}"
+           class="group card flex flex-col p-6 transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+            <div class="flex items-center gap-4">
+                {{ avatar(member, "h-14 w-14 text-xl") }}
+                <div class="min-w-0">
+                    <p class="truncate font-serif text-xl font-semibold text-text-primary group-hover:text-accent transition-colors">{{ member.display_name }}</p>
+                    <p class="truncate text-sm">@{{ member.username }}</p>
+                </div>
+            </div>
+
+            <dl class="mt-5 grid grid-cols-3 gap-2 border-y border-border-subtle py-3 text-center">
+                <div>
+                    <dd class="font-serif text-2xl font-semibold text-text-primary">{{ card.picks|length }}</dd>
+                    <dt class="text-[0.7rem] uppercase tracking-wider">Picks</dt>
+                </div>
+                <div>
+                    <dd class="font-serif text-2xl font-semibold text-text-primary">{{ card.review_count }}</dd>
+                    <dt class="text-[0.7rem] uppercase tracking-wider">Reviews</dt>
+                </div>
+                <div>
+                    <dd class="font-serif text-2xl font-semibold text-text-primary">{{ "%.1f"|format(card.avg_given) if card.avg_given else "–" }}</dd>
+                    <dt class="text-[0.7rem] uppercase tracking-wider">Avg score</dt>
+                </div>
+            </dl>
+
+            <div class="mt-5 flex-1">
+                {% if card.picks %}
+                    <p class="mb-2 text-xs font-medium uppercase tracking-wider">Picked</p>
+                    <div class="flex items-end gap-2">
+                        {% for book in card.picks[:5] %}
+                            <div class="w-11 flex-none shadow-md rounded-[3px]" title="{{ book.name }}">{{ book_cover(book) }}</div>
+                        {% endfor %}
+                        {% if card.picks|length > 5 %}<span class="pb-1 text-xs">+{{ card.picks|length - 5 }}</span>{% endif %}
+                    </div>
+                {% else %}
+                    <p class="font-serif italic">Hasn't picked a book yet.</p>
+                {% endif %}
+            </div>
+        </a>
+    {% endfor %}
+</div>
+{% endblock content %}

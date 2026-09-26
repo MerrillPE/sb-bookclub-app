@@ -1,0 +1,35 @@
+{# Shared two-panel layout for the logged-out pages (login, register, reset password): a
+   decorative shelf of classics on one side, the page's form card on the other. #}
+{% from "_macros.html" import spine %}
+{% extends "base.html" %}
+{% block content %}
+<div class="grid min-h-[70vh] items-center gap-10 lg:grid-cols-2 lg:gap-16">
+    <div class="hidden lg:block">
+        <p class="eyebrow">The Spine Busters Book Club</p>
+        <h2 class="mt-4 font-serif text-6xl font-semibold leading-[1.02] tracking-tight text-text-primary">
+            Read together.<br><span class="italic text-accent">Argue about it after.</span>
+        </h2>
+        <p class="mt-6 max-w-md text-lg">A small club's shared shelf &mdash; what we're reading, what's next, and what everyone really thought.</p>
+        <div class="shelf mt-12 max-w-lg" style="--slot: 13rem;" aria-hidden="true">
+            {% for title, author in [
+                ("Middlemarch", "George Eliot"), ("Moby-Dick", "Herman Melville"), ("Jane Eyre", "Charlotte Brontë"),
+                ("Frankenstein", "Mary Shelley"), ("Dracula", "Bram Stoker"), ("Emma", "Jane Austen"),
+                ("Walden", "Henry David Thoreau"), ("Little Women", "Louisa May Alcott"), ("Great Expectations", "Charles Dickens"),
+            ] %}
+                {{ spine(title, author, title|title_seed, leaning=loop.last) }}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="mx-auto w-full max-w-md">
+        <div class="mb-8 text-center lg:hidden">
+            <img src="{{ url_for('static', filename='img/favicon.svg') }}" alt="" class="mx-auto h-14 w-14">
+            <p class="mt-3 font-serif text-2xl font-semibold italic text-text-primary">Read together.</p>
+            <p class="font-serif text-lg italic text-accent">Argue about it after.</p>
+        </div>
+        <div class="card p-6 shadow-xl sm:p-9">
+            {% block auth_card %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock content %}

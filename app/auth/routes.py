@@ -24,7 +24,7 @@ def login():
         if member and member.check_password(form.password.data):
             login_user(member)
             return redirect(url_for("home"))
-        flash("Invalid username or password")
+        flash("Invalid username or password", "error")
     return render_template("auth/login.html", form=form)
 
 @bp.route("/logout")
@@ -38,15 +38,15 @@ def register(token):
     invite = Invite.query.filter_by(token=token).first()
     
     if invite is None:
-        flash("Invalid invite link")
+        flash("Invalid invite link", "error")
         return redirect(url_for("auth.login"))
     
     if invite.used_at is not None:
-        flash("Invite has already been used")
+        flash("Invite has already been used", "error")
         return redirect(url_for("auth.login"))
     
     if invite.is_expired:
-        flash("This invite has expired")
+        flash("This invite has expired", "error")
         return redirect(url_for("auth.login"))
     
     form = RegistrationForm()
@@ -72,15 +72,15 @@ def reset_password(token):
     reset = PasswordReset.query.filter_by(token=token).first()
 
     if reset is None:
-        flash("Invalid password reset link")
+        flash("Invalid password reset link", "error")
         return redirect(url_for("auth.login"))
 
     if reset.used_at is not None:
-        flash("This reset link has already been used")
+        flash("This reset link has already been used", "error")
         return redirect(url_for("auth.login"))
 
     if reset.is_expired:
-        flash("This reset link has expired")
+        flash("This reset link has expired", "error")
         return redirect(url_for("auth.login"))
 
     form = ResetPasswordForm()

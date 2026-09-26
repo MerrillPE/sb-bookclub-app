@@ -1,11 +1,27 @@
+{# Cloth colours for generated covers, spines and member avatars (background, ink). A book's
+   colour is picked by its title (the `title_seed` filter) so the add/edit form's live
+   preview can compute the same one client-side; members are picked by id. Deliberately
+   theme-independent -- a book is an object, not page chrome. #}
+{% set cover_palette = [
+    ["#7A3E2B", "#F3E3D3"],
+    ["#2F4A3A", "#E6EEDF"],
+    ["#26405E", "#E1E9F2"],
+    ["#5E3F66", "#EFE4F1"],
+    ["#98702E", "#FBF1DC"],
+    ["#3B3632", "#EDE6DC"],
+    ["#8C2F39", "#F7E3E4"],
+    ["#3F6B6A", "#E2F0EE"],
+] %}
+
+{% set star_path = "M10 1.5l2.6 5.3 5.9.8-4.2 4.1 1 5.8L10 14.9l-5.3 2.6 1-5.8-4.2-4.1 5.9-.8z" %}
+
 {% macro form_field(field, width_class="w-full") %}
-    <div class="mb-4 {{ width_class }}">
+    <div class="mb-5 {{ width_class }}">
         {{ field.label(class="block text-sm font-medium text-text-primary") }}
-        {{ field(class="mt-1 block w-full rounded-md bg-input-bg border-stone-300 dark:border-stone-600 dark:text-text-primary shadow-sm
-        focus:border-amber-600 focus:ring-amber-600 sm:text-sm") }}
+        {{ field(class="field-input mt-1.5", **kwargs) }}
         {% if field.errors %}
             {% for error in field.errors %}
-                <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ error }}</p>
+                <p class="mt-1 text-sm text-btn-danger">{{ error }}</p>
             {% endfor %}
         {% endif %}
     </div>
@@ -13,28 +29,28 @@
 
 {% macro score_field(field) %}
     {% set initial_score = field.data if field.data is not none else 1.0 %}
-    <div class="mb-4">
+    <div class="mb-5">
         {{ field.label(class="block text-sm font-medium text-text-primary") }}
         <div class="mt-1 flex items-center gap-3">
             {{ field(class="sr-only", **{"data-score-select": "true"}) }}
             <div class="relative inline-flex items-center cursor-pointer touch-none" data-star-picker
-                 style="width: 8.75rem; height: 2.75rem;" role="presentation" aria-hidden="true">
-                <div class="absolute inset-0 flex items-center text-stone-300 dark:text-stone-600">
+                 style="width: 10rem; height: 3rem;" role="presentation" aria-hidden="true">
+                <div class="absolute inset-0 flex items-center text-border-strong">
                 {% for _ in range(5) %}
-                    <svg viewBox="0 0 20 20" fill="currentColor" class="h-7 w-7"><path d="M10 1.5l2.6 5.3 5.9.8-4.2 4.1 1 5.8L10 14.9l-5.3 2.6 1-5.8-4.2-4.1 5.9-.8z"/></svg>
+                    <svg viewBox="0 0 20 20" fill="currentColor" class="h-8 w-8"><path d="{{ star_path }}"/></svg>
                 {% endfor %}
                 </div>
-                <div class="absolute inset-0 flex items-center text-amber-500 overflow-hidden" data-star-fill style="width: {{ (initial_score / 5 * 100) }}%;">
+                <div class="absolute inset-0 flex items-center text-star overflow-hidden" data-star-fill style="width: {{ (initial_score / 5 * 100) }}%;">
                 {% for _ in range(5) %}
-                    <svg viewBox="0 0 20 20" fill="currentColor" class="h-7 flex-none" style="width: 1.75rem;"><path d="M10 1.5l2.6 5.3 5.9.8-4.2 4.1 1 5.8L10 14.9l-5.3 2.6 1-5.8-4.2-4.1 5.9-.8z"/></svg>
+                    <svg viewBox="0 0 20 20" fill="currentColor" class="h-8 flex-none" style="width: 2rem;"><path d="{{ star_path }}"/></svg>
                 {% endfor %}
                 </div>
             </div>
-            <span data-score-display class="text-sm text-text-secondary tabular-nums">{{ "%.1f"|format(initial_score) }}</span>
+            <span data-score-display class="font-serif text-2xl font-semibold text-text-primary tabular-nums">{{ "%.1f"|format(initial_score) }}</span>
         </div>
         {% if field.errors %}
             {% for error in field.errors %}
-                <p class="mt-1 text-sm text-rose-600 dark:text-rose-400">{{ error }}</p>
+                <p class="mt-1 text-sm text-btn-danger">{{ error }}</p>
             {% endfor %}
         {% endif %}
     </div>
@@ -42,75 +58,164 @@
 
 {% macro status_badge(status_value, status_label) %}
     {% set colors = {
-        "to_be_read": "bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300",
-        "currently_reading": "bg-amber-200 text-amber-900 dark:bg-amber-900/40 dark:text-amber-300",
-        "finished": "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-        "abandoned": "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+        "to_be_read": "bg-surface-muted text-text-secondary ring-border-strong",
+        "currently_reading": "bg-accent-soft text-accent ring-accent/30",
+        "finished": "bg-emerald-50 text-emerald-800 ring-emerald-700/20 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-400/20",
+        "abandoned": "bg-rose-50 text-rose-800 ring-rose-700/20 dark:bg-rose-950/50 dark:text-rose-300 dark:ring-rose-400/20",
     } %}
-    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs
-    font-medium {{ colors.get(status_value, 'bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300') }}">
-        {{ status_label }}
-    </span>
+    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wider ring-1 ring-inset
+    {{ colors.get(status_value, colors['to_be_read']) }}">{{ status_label }}</span>
 {% endmacro %}
 
 {% macro invite_status_badge(status_label) %}
     {% set colors = {
-        "Pending": "bg-amber-200 text-amber-900 dark:bg-amber-900/40 dark:text-amber-300",
-        "Used": "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-        "Expired": "bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300",
+        "Pending": "bg-accent-soft text-accent ring-accent/30",
+        "Used": "bg-emerald-50 text-emerald-800 ring-emerald-700/20 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-400/20",
+        "Expired": "bg-surface-muted text-text-secondary ring-border-strong",
     } %}
-    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs
-    font-medium {{ colors.get(status_label, 'bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300') }}">
-        {{ status_label }}
-    </span>
+    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wider ring-1 ring-inset
+    {{ colors.get(status_label, colors['Expired']) }}">{{ status_label }}</span>
 {% endmacro %}
 
-{% macro star_rating(score) %}
-    <div class="relative inline-flex" style="width: 5.5rem; height: 1.1rem;">
-        <div class="absolute inset-0 flex text-stone-300 dark:text-stone-600">
+{# Proportionally-filled star row: an outline row with a clipped filled row on top, so any
+   0.5-step score renders without a separate half-star glyph. #}
+{% macro star_rating(score, size=1.1) %}
+    <div class="relative inline-flex flex-none" style="width: {{ size * 5 }}rem; height: {{ size }}rem;" role="img" aria-label="{{ '%.1f'|format(score) }} out of 5 stars">
+        <div class="absolute inset-0 flex text-border-strong">
         {% for _ in range(5) %}
-            <svg viewBox="0 0 20 20" fill="currentColor" class="h-full w-1/5"><path d="M10 1.5l2.6 5.3 5.9.8-4.2 4.1 1 5.8L10 14.9l-5.3 2.6 1-5.8-4.2-4.1 5.9-.8z"/></svg>
+            <svg viewBox="0 0 20 20" fill="currentColor" class="h-full flex-none" style="width: {{ size }}rem;"><path d="{{ star_path }}"/></svg>
         {% endfor %}
         </div>
-        <div class="absolute inset-0 flex text-amber-500 overflow-hidden" data-star-fill style="width: {{ (score / 5 * 100) }}%;">
+        <div class="absolute inset-0 flex text-star overflow-hidden" data-star-fill style="width: {{ (score / 5 * 100) }}%;">
         {% for _ in range(5) %}
-            <svg viewBox="0 0 20 20" fill="currentColor" class="h-full flex-none" style="width: 1.1rem;"><path d="M10 1.5l2.6 5.3 5.9.8-4.2 4.1 1 5.8L10 14.9l-5.3 2.6 1-5.8-4.2-4.1 5.9-.8z"/></svg>
+            <svg viewBox="0 0 20 20" fill="currentColor" class="h-full flex-none" style="width: {{ size }}rem;"><path d="{{ star_path }}"/></svg>
         {% endfor %}
         </div>
-  </div>
+    </div>
 {% endmacro %}
 
+{# A book's cover image, or -- when it has none -- a generated typographic cover (title and
+   author on the book's cloth colour). Text is sized in container-query units so the same
+   markup scales from a thumbnail up to the detail page. #}
+{% macro book_cover(book, class="") %}
+    <div class="@container relative w-full aspect-[2/3] overflow-hidden rounded-[3px] {{ class }}">
+        {% if book.cover_url %}
+            <img src="{{ book.cover_url }}" alt="Cover of {{ book.name }}" loading="lazy" class="absolute inset-0 h-full w-full object-cover">
+        {% else %}
+            {% set bg, fg = cover_palette[(book.name|title_seed) % cover_palette|length] %}
+            <div class="absolute inset-0" style="background-color: {{ bg }}; color: {{ fg }};" role="img" aria-label="{{ book.name }} by {{ book.author }}">
+                <div class="absolute inset-[7%] border opacity-40" style="border-color: {{ fg }};"></div>
+                <div class="absolute inset-[12%] flex flex-col items-center justify-center text-center">
+                    <p class="font-serif font-semibold leading-[1.1] text-[11cqw] line-clamp-5">{{ book.name }}</p>
+                    <div class="my-[6cqw] h-px w-[25%]" style="background-color: {{ fg }}; opacity: 0.6;"></div>
+                    <p class="uppercase tracking-[0.15em] text-[5.5cqw] opacity-80 line-clamp-2">{{ book.author }}</p>
+                </div>
+            </div>
+        {% endif %}
+        {# hinge crease + edge shading, so flat images and generated covers both read as a book #}
+        <div class="pointer-events-none absolute inset-y-0 left-0 w-[8%] bg-gradient-to-r from-black/25 via-white/10 to-transparent"></div>
+        <div class="pointer-events-none absolute inset-0 rounded-[3px] ring-1 ring-inset ring-black/10"></div>
+    </div>
+{% endmacro %}
+
+{% macro avatar(member, size_class="h-9 w-9 text-sm") %}
+    {% set bg, fg = cover_palette[member.id % cover_palette|length] %}
+    <span class="inline-flex flex-none items-center justify-center rounded-full font-serif font-semibold ring-2 ring-page-bg {{ size_class }}"
+          style="background-color: {{ bg }}; color: {{ fg }};" title="{{ member.display_name }}" aria-hidden="true">{{ member.display_name[:1]|upper }}</span>
+{% endmacro %}
+
+{# One book spine standing on a .shelf. Width follows the title's length (so it fits
+   whole, wrapping to a second line if needed); height and cloth colour come from `seed`, so
+   a given title always looks the same. `leaning` tips it against its neighbour (used for abandoned
+   books). Optional hover/focus card content via {% call spine(...) %}...{% endcall %}. #}
+{% macro spine(title, author, seed, href=None, label=None, leaning=False) %}
+    {% set bg, fg = cover_palette[seed % cover_palette|length] %}
+    {% set height = ["84%", "90%", "95%", "99%"][(seed // 3) % 4] %}
+    {% set length = title|length %}
+    {% set width = ["2.7rem", "3.1rem", "3.7rem", "4.2rem"][0 if length <= 9 else 1 if length <= 16 else 2 if length <= 24 else 3] %}
+    {% set tag = "a" if href else "div" %}
+    <div class="group relative {{ 'mr-5' if leaning }}">
+        <{{ tag }} {% if href %}href="{{ href }}"{% endif %}
+            class="spine group-hover:-translate-y-3 group-hover:shadow-lg focus-visible:-translate-y-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            style="--spine-bg: {{ bg }}; --spine-fg: {{ fg }}; width: {{ width }}; height: {{ height }};{% if leaning %} rotate: 6deg; transform-origin: bottom right;{% endif %}"
+            {% if href %}aria-label="{{ title }} by {{ author }}"{% endif %}>
+            <span class="spine-band mt-3"></span>
+            <span class="spine-title-main flex-1 px-1 py-3 font-serif text-[0.9rem] font-semibold">{{ title }}</span>
+            <span class="spine-title mb-2 max-h-[28%] text-[0.58rem] uppercase tracking-[0.2em] opacity-75">{{ author.split()[-1] if author else "" }}</span>
+            {% if label %}<span class="mb-2 text-[0.65rem] font-bold tabular-nums">{{ label }}</span>{% endif %}
+            <span class="spine-band mb-2.5"></span>
+        </{{ tag }}>
+        {% if caller is defined %}
+            <div class="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 hidden w-60 -translate-x-1/2 pointer-fine:group-hover:block group-focus-within:block">
+                <div class="card p-4 shadow-xl">{{ caller() }}</div>
+            </div>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+{% macro book_popover(book) %}
+    <p class="font-serif text-base font-semibold leading-snug text-text-primary">{{ book.name }}</p>
+    <p class="text-sm text-text-secondary">{{ book.author }}</p>
+    <div class="mt-2 flex flex-wrap items-center gap-2">
+        {{ status_badge(book.status.value, book.status_label) }}
+        {% if book.is_finished and book.average_rating %}
+            {{ star_rating(book.average_rating, 0.9) }}<span class="text-xs font-semibold tabular-nums text-text-primary">{{ "%.1f"|format(book.average_rating) }}</span>
+        {% endif %}
+    </div>
+    {% if book.picked_by %}<p class="mt-2 text-xs text-text-secondary">Picked by <span class="font-medium text-text-primary">{{ book.picked_by.display_name }}</span></p>{% endif %}
+{% endmacro %}
+
+{% macro book_spine(book) %}
+    {% set abandoned = book.status.name == "ABANDONED" %}
+    {% set label = "DNF" if abandoned else ("%.1f"|format(book.average_rating) if book.is_finished and book.average_rating else None) %}
+    {% call spine(book.name, book.author, book.name|title_seed, href=url_for('books.book_detail', book_id=book.id), label=label, leaning=abandoned) %}
+        {{ book_popover(book) }}
+    {% endcall %}
+{% endmacro %}
+
+{# A book displayed face-out on a .shelf-faceout, like a bookstore feature shelf. #}
+{% macro faceout_book(book) %}
+    <div class="group relative">
+        <a href="{{ url_for('books.book_detail', book_id=book.id) }}" aria-label="{{ book.name }} by {{ book.author }}"
+           class="block aspect-[2/3] rounded-[3px] shadow-book transition-transform duration-300 motion-safe:group-hover:-translate-y-2 motion-safe:group-hover:-rotate-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+           style="height: calc(var(--slot) - 0.25rem);">
+            {{ book_cover(book, class="h-full") }}
+        </a>
+        <div class="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 hidden w-60 -translate-x-1/2 pointer-fine:group-hover:block group-focus-within:block">
+            <div class="card p-4 shadow-xl">{{ book_popover(book) }}</div>
+        </div>
+    </div>
+{% endmacro %}
+
+{# Grid tile used by the flat (filtered/sorted) list view. #}
 {% macro book_card(book, highlighted=False) %}
-    <a href="{{ url_for('books.book_detail', book_id=book.id) }}"
-       class="block w-full max-w-[280px] mx-auto sm:max-w-none bg-surface rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow
-       {{ 'border-2 border-amber-400' if highlighted else 'border border-border-subtle' }}">
-      {% if book.cover_url %}
-        <img src="{{ book.cover_url }}" alt="" loading="lazy" class="w-full aspect-[2/3] object-cover">
-      {% else %}
-        <div class="w-full aspect-[2/3] bg-surface-muted flex items-center justify-center text-stone-400 text-sm">No cover</div>
-      {% endif %}
-      <div class="p-2.5 sm:p-4">
-        <h2 class="text-sm sm:text-base font-serif font-semibold text-text-primary">{{ book.name }}</h2>
-        <p class="text-xs sm:text-sm text-text-secondary">{{ book.author }}</p>
-        <div class="mt-1.5 sm:mt-2 flex items-center justify-between">
-          {{ status_badge(book.status.value, book.status_label) }}
-          {% if book.is_finished and book.average_rating %}{{ star_rating(book.average_rating) }}{% endif %}
+    <a href="{{ url_for('books.book_detail', book_id=book.id) }}" class="group block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent rounded-md">
+        <div class="shadow-book rounded-[3px] transition-transform duration-300 motion-safe:group-hover:-translate-y-1.5 {{ 'ring-2 ring-accent ring-offset-4 ring-offset-page-bg' if highlighted }}">
+            {{ book_cover(book) }}
         </div>
-      </div>
+        <h2 class="mt-3 font-serif text-base font-semibold leading-snug text-text-primary group-hover:text-accent transition-colors line-clamp-2">{{ book.name }}</h2>
+        <p class="text-sm text-text-secondary">{{ book.author }}</p>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+            {{ status_badge(book.status.value, book.status_label) }}
+            {% if book.is_finished and book.average_rating %}{{ star_rating(book.average_rating, 0.9) }}{% endif %}
+        </div>
     </a>
 {% endmacro %}
 
 {% macro rating_card(rating, own=False, delete_form=None) %}
-    <div class="bg-surface border border-border-subtle rounded-lg shadow-sm p-4">
-        <div class="flex items-start justify-between gap-2">
-            <div>
-                <p class="font-medium text-text-primary">{{ rating.member.display_name }}</p>
-                <div class="mt-1">{{ star_rating(rating.score) }}</div>
-            </div>
+    <article class="card h-full p-5 {{ 'ring-2 ring-accent/40' if own }}">
+        <div class="flex items-start justify-between gap-3">
+            <a href="{{ url_for('members.profile', member_id=rating.member.id) }}" class="group/member flex items-center gap-3">
+                {{ avatar(rating.member, "h-10 w-10 text-base") }}
+                <div>
+                    <p class="font-medium leading-tight text-text-primary group-hover/member:text-accent transition-colors">{{ rating.member.display_name }}{% if own %} <span class="text-xs font-normal text-text-secondary">(you)</span>{% endif %}</p>
+                    <div class="mt-1 flex items-center gap-2">{{ star_rating(rating.score, 0.95) }}<span class="text-xs font-semibold tabular-nums text-text-secondary">{{ "%.1f"|format(rating.score) }}</span></div>
+                </div>
+            </a>
             {% if own %}
-            <div class="flex items-center gap-2 flex-none">
+            <div class="flex items-center gap-1 flex-none">
                 <button type="button" data-inline-edit-trigger
-                        class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
+                        class="rounded-full p-2 text-text-secondary hover:bg-surface-muted hover:text-text-primary"
                         aria-label="Edit your rating">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
                         <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793ZM11.379 5.793 3 14.172V17h2.828l8.38-8.379-2.83-2.828Z" />
@@ -118,7 +223,7 @@
                 </button>
                 <form method="POST" action="{{ url_for('books.delete_rating', book_id=rating.book_id) }}" data-confirm="Delete your rating? This cannot be undone.">
                     {{ delete_form.hidden_tag() }}
-                    <button type="submit" class="text-stone-400 hover:text-btn-danger" aria-label="Delete your rating">
+                    <button type="submit" class="rounded-full p-2 text-text-secondary hover:bg-surface-muted hover:text-btn-danger" aria-label="Delete your rating">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
                             <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" />
                         </svg>
@@ -127,6 +232,10 @@
             </div>
             {% endif %}
         </div>
-        {% if rating.comment %}<p class="mt-2 text-sm text-text-secondary">{{ rating.comment }}</p>{% endif %}
-    </div>
+        {% if rating.comment %}
+            <blockquote class="relative mt-4 pl-6 font-serif text-[1.05rem] italic leading-relaxed text-text-primary">
+                <span class="absolute -top-2 left-0 font-serif text-4xl not-italic leading-none text-accent/50" aria-hidden="true">&ldquo;</span>{{ rating.comment }}
+            </blockquote>
+        {% endif %}
+    </article>
 {% endmacro %}
