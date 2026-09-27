@@ -29,7 +29,7 @@ class BookStatus(enum.Enum):
 class Member(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    display_name = db.Column(db.String(80), unique=True, nullable=False)
+    display_name = db.Column(db.String(80), nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
 

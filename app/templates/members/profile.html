@@ -12,7 +12,36 @@
     {{ avatar(member, "h-24 w-24 text-4xl sm:h-28 sm:w-28 sm:text-5xl") }}
     <div class="min-w-0">
         <p class="eyebrow">Club member</p>
-        <h1 class="mt-2 font-serif text-4xl font-semibold tracking-tight text-text-primary sm:text-6xl">{{ member.display_name }}</h1>
+        {% if form %}
+            {# Shared data-inline-edit widget (wired up in main.js); opened server-side when the form has errors. #}
+            <div data-inline-edit class="mt-2">
+                <div data-inline-edit-view class="flex items-center justify-center gap-2 sm:justify-start{% if form.errors %} hidden{% endif %}">
+                    <h1 class="font-serif text-4xl font-semibold tracking-tight text-text-primary sm:text-6xl">{{ member.display_name }}</h1>
+                    <button type="button" data-inline-edit-trigger
+                            class="flex-none rounded-full p-2 text-text-secondary hover:bg-surface-muted hover:text-text-primary"
+                            aria-label="Edit your display name">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793ZM11.379 5.793 3 14.172V17h2.828l8.38-8.379-2.83-2.828Z" />
+                        </svg>
+                    </button>
+                </div>
+                <div data-inline-edit-panel{% if not form.errors %} class="hidden"{% endif %}>
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        {{ form.display_name(class="field-input font-serif text-3xl font-semibold sm:text-4xl", **{"aria-label": "Display name"}) }}
+                        {% for error in form.display_name.errors %}
+                            <p class="mt-1 text-sm text-btn-danger">{{ error }}</p>
+                        {% endfor %}
+                        <div class="mt-3 flex justify-center gap-2 sm:justify-start">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" data-inline-edit-cancel class="btn btn-secondary">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <h1 class="mt-2 font-serif text-4xl font-semibold tracking-tight text-text-primary sm:text-6xl">{{ member.display_name }}</h1>
+        {% endif %}
         <p class="mt-1">@{{ member.username }}</p>
         {% if taste_delta is not none %}
             <p class="mt-3 font-serif text-lg italic text-text-primary">

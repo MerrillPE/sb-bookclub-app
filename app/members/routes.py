@@ -1,9 +1,11 @@
 from datetime import date
 
-from flask import Blueprint, render_template
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
-from flask_login import login_required
+from flask_login import current_user, login_required
 
+from app.extensions import db
+from app.members.forms import DisplayNameForm
 from app.models import Book, Member
 
 
@@ -43,10 +45,23 @@ def index():
     return render_template("members/index.html", cards=cards)
 
 
-@bp.route("/<int:member_id>")
+@bp.route("/<int:member_id>", methods=["GET", "POST"])
 @login_required
 def profile(member_id):
     member = Member.query.filter_by(id=member_id, is_admin=False).first_or_404()
+
+    # Only your own profile gets the "Edit name" form.
+    form = None
+    if member.id == current_user.id:
+        form = DisplayNameForm(obj=member)
+        if form.validate_on_submit():
+            member.display_name = form.display_name.data
+            db.session.commit()
+            flash("Display name updated.", "success")
+            return redirect(url_for("members.profile", member_id=member.id))
+    elif request.method == "POST":
+        abort(403)
+
     picks = sorted(Book.query.filter_by(picked_by_id=member.id).all(), key=_by_reading_date, reverse=True)
     reviews = sorted(member.ratings, key=lambda r: (_by_reading_date(r.book), r.created_at), reverse=True)
 
@@ -58,6 +73,7 @@ def profile(member_id):
     return render_template(
         "members/profile.html",
         member=member,
+        form=form,
         picks=picks,
         reviews=[(r, _others_average(r)) for r in reviews],
         avg_given=sum(scores) / len(scores) if scores else None,
