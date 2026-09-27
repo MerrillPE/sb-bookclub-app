@@ -9,6 +9,10 @@ from app.models import Book, Member
 
 bp = Blueprint("members", __name__, url_prefix="/members")
 
+# Admin accounts are separate club-management logins (seeded before any members join,
+# used for invites/password resets and site-wide edits), not reading members -- so they're
+# left out of the members section entirely, same as the "Picked by" choices in books/routes.py.
+
 
 def _by_reading_date(book):
     return book.reading_start_date or date.min
@@ -24,7 +28,7 @@ def _others_average(rating):
 @bp.route("/")
 @login_required
 def index():
-    members = Member.query.order_by(Member.display_name).all()
+    members = Member.query.filter_by(is_admin=False).order_by(Member.display_name).all()
     books = Book.query.all()
     cards = []
     for member in members:
@@ -42,7 +46,7 @@ def index():
 @bp.route("/<int:member_id>")
 @login_required
 def profile(member_id):
-    member = Member.query.get_or_404(member_id)
+    member = Member.query.filter_by(id=member_id, is_admin=False).first_or_404()
     picks = sorted(Book.query.filter_by(picked_by_id=member.id).all(), key=_by_reading_date, reverse=True)
     reviews = sorted(member.ratings, key=lambda r: (_by_reading_date(r.book), r.created_at), reverse=True)
 

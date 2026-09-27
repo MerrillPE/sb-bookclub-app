@@ -298,13 +298,17 @@ def book_detail(book_id):
     buckets = Counter(int(r.score) for r in book.ratings)
     distribution = [(stars, buckets.get(stars, 0)) for stars in range(5, 0, -1)]
     rated_ids = {r.member_id for r in book.ratings}
-    unrated_members = [m for m in Member.query.order_by(Member.display_name).all() if m.id not in rated_ids]
+    # Admin accounts aren't reading members, so they're never "still to weigh in" -- and an
+    # admin's own rating (if any) isn't counted toward "N of M members have rated" either.
+    unrated_members = [m for m in Member.query.filter_by(is_admin=False).order_by(Member.display_name).all() if m.id not in rated_ids]
+    rated_member_count = sum(1 for r in book.ratings if not r.member.is_admin)
 
     return render_template(
         "books/detail.html",
         book=book,
         distribution=distribution,
         unrated_members=unrated_members,
+        rated_member_count=rated_member_count,
         form=form,
         delete_form=delete_form,
         existing_rating=existing_rating,

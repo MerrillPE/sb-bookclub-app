@@ -205,13 +205,15 @@
 {% macro rating_card(rating, own=False, delete_form=None) %}
     <article class="card h-full p-5 {{ 'ring-2 ring-accent/40' if own }}">
         <div class="flex items-start justify-between gap-3">
-            <a href="{{ url_for('members.profile', member_id=rating.member.id) }}" class="group/member flex items-center gap-3">
+            {# Admins have no member profile (see app/members/routes.py), so their name isn't a link. #}
+            {% set member_tag = "div" if rating.member.is_admin else "a" %}
+            <{{ member_tag }} {% if not rating.member.is_admin %}href="{{ url_for('members.profile', member_id=rating.member.id) }}"{% endif %} class="group/member flex items-center gap-3">
                 {{ avatar(rating.member, "h-10 w-10 text-base") }}
                 <div>
                     <p class="font-medium leading-tight text-text-primary group-hover/member:text-accent transition-colors">{{ rating.member.display_name }}{% if own %} <span class="text-xs font-normal text-text-secondary">(you)</span>{% endif %}</p>
                     <div class="mt-1 flex items-center gap-2">{{ star_rating(rating.score, 0.95) }}<span class="text-xs font-semibold tabular-nums text-text-secondary">{{ "%.1f"|format(rating.score) }}</span></div>
                 </div>
-            </a>
+            </{{ member_tag }}>
             {% if own %}
             <div class="flex items-center gap-1 flex-none">
                 <button type="button" data-inline-edit-trigger

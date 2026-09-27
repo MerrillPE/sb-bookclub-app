@@ -11,7 +11,7 @@
 <header class="mb-12 flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:text-left">
     {{ avatar(member, "h-24 w-24 text-4xl sm:h-28 sm:w-28 sm:text-5xl") }}
     <div class="min-w-0">
-        <p class="eyebrow">Club member{% if member.is_admin %} &middot; admin{% endif %}</p>
+        <p class="eyebrow">Club member</p>
         <h1 class="mt-2 font-serif text-4xl font-semibold tracking-tight text-text-primary sm:text-6xl">{{ member.display_name }}</h1>
         <p class="mt-1">@{{ member.username }}</p>
         {% if taste_delta is not none %}

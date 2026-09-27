@@ -60,7 +60,9 @@
                                 <div class="py-1">
                                     <a href="{{ url_for('books.index') }}" class="block px-4 py-2.5 text-sm hover:bg-surface-muted hover:text-text-primary sm:hidden">The Shelf</a>
                                     <a href="{{ url_for('members.index') }}" class="block px-4 py-2.5 text-sm hover:bg-surface-muted hover:text-text-primary sm:hidden">Members</a>
-                                    <a href="{{ url_for('members.profile', member_id=current_user.id) }}" class="block px-4 py-2.5 text-sm hover:bg-surface-muted hover:text-text-primary">Your profile</a>
+                                    {% if not current_user.is_admin %}
+                                        <a href="{{ url_for('members.profile', member_id=current_user.id) }}" class="block px-4 py-2.5 text-sm hover:bg-surface-muted hover:text-text-primary">Your profile</a>
+                                    {% endif %}
                                     {% if current_user.is_admin %}
                                         <a href="{{ url_for('admin.invites') }}" class="block px-4 py-2.5 text-sm hover:bg-surface-muted hover:text-text-primary">Manage invites</a>
                                         <a href="{{ url_for('admin.members') }}" class="block px-4 py-2.5 text-sm hover:bg-surface-muted hover:text-text-primary">Manage members</a>
