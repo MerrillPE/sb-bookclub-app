@@ -1,52 +1,181 @@
-{% from "_macros.html" import book_card %}
+{% from "_macros.html" import book_card, book_cover, book_spine, faceout_book, avatar, star_rating %}
 {% extends "base.html" %}
+{% block title %}The Shelf · Spine Busters Book Club{% endblock %}
 {% block content %}
-<div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-serif font-semibold text-text-primary">Books</h1>
-    {#
-    <a href="{{ url_for('books.add_book') }}" class="inline-flex items-center rounded-md bg-btn-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-btn-primary-hover">Add a Book</a>
-    Commented out: reachable from the navbar's account menu instead (base.html). Kept here, disabled, in case it's wanted back on this page directly.
-    #}
-    <div class="relative">
-        <button type="button" data-filter-toggle class="inline-flex items-center gap-1.5 rounded-md border border-stone-300 dark:border-stone-600 bg-surface px-3 py-2 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-muted" aria-expanded="false" aria-haspopup="true" aria-controls="filter-menu">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 01.628.74v2.288a2.25 2.25 0 01-.659 1.59l-4.682 4.683a2.25 2.25 0 00-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757l-1.937 1.55A.75.75 0 018 18.25v-5.757a2.25 2.25 0 00-.659-1.591L2.659 6.22A2.25 2.25 0 012 4.629V2.34a.75.75 0 01.628-.74z" clip-rule="evenodd"/></svg>
-            Filter
-        </button>
-        <div id="filter-menu" data-filter-menu class="hidden absolute right-0 mt-2 w-64 bg-surface border border-border-subtle rounded-lg shadow-sm p-4 text-text-secondary z-10">
-            <form method="GET" class="flex flex-col gap-3">
-                <div>
-                    <label for="status" class="block text-sm font-medium text-text-primary">Status</label>
-                    <select name="status" id="status" class="mt-1 block w-full rounded-md bg-input-bg border-stone-300 dark:border-stone-600 dark:text-text-primary shadow-sm focus:border-amber-600 focus:ring-amber-600 sm:text-sm">
-                        <option value="">All</option>
-                        {% for value, label in status_choices %}
-                            <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label for="sort" class="block text-sm font-medium text-text-primary">Sort by</label>
-                    <select name="sort" id="sort" class="mt-1 block w-full rounded-md bg-input-bg border-stone-300 dark:border-stone-600 dark:text-text-primary shadow-sm focus:border-amber-600 focus:ring-amber-600 sm:text-sm">
-                        <option value="reading_first" {% if selected_sort == "reading_first" %}selected{% endif %}>Currently Reading first</option>
-                        <option value="start_date" {% if selected_sort == "start_date" %}selected{% endif %}>Start date</option>
-                        <option value="status" {% if selected_sort == "status" %}selected{% endif %}>Status</option>
-                        <option value="rating" {% if selected_sort == "rating" %}selected{% endif %}>Average rating</option>
-                    </select>
-                </div>
-                <div class="flex items-center justify-between gap-2">
-                    <button type="submit" class="inline-flex items-center rounded-md bg-btn-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-btn-primary-hover">Apply</button>
-                    {% if selected_status or selected_sort != "reading_first" %}
-                        <a href="{{ url_for('books.index') }}" class="text-sm text-text-secondary hover:text-stone-700 dark:hover:text-stone-200 underline">Clear</a>
-                    {% endif %}
-                </div>
-            </form>
+
+{# ---------- Masthead ---------- #}
+<header class="mb-10 sm:mb-14">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+            <p class="eyebrow">The Spine Busters Book Club{% if stats and stats.since %} &middot; since {{ stats.since }}{% endif %}</p>
+            <h1 class="mt-2 font-serif text-5xl font-semibold tracking-tight text-text-primary sm:text-7xl">
+                {% if sections or not books %}The Shelf{% else %}All books{% endif %}
+            </h1>
         </div>
+        {% if books or selected_status %}
+        <div class="relative flex flex-none items-center gap-2 sm:pt-1">
+            <div class="inline-flex rounded-full border border-border-strong bg-surface p-0.5 text-sm font-medium" role="group" aria-label="Layout">
+                <a href="{{ url_for('books.index') }}" class="rounded-full px-3 py-1.5 transition-colors {{ 'bg-text-primary text-page-bg' if sections else 'text-text-secondary hover:text-text-primary' }}">Shelf</a>
+                <a href="{{ url_for('books.index', view='grid', sort=selected_sort, status=selected_status or None) }}" class="rounded-full px-3 py-1.5 transition-colors {{ 'text-text-secondary hover:text-text-primary' if sections else 'bg-text-primary text-page-bg' }}">Covers</a>
+            </div>
+            <div>
+                <button type="button" data-filter-toggle class="btn btn-secondary px-3" aria-expanded="false" aria-haspopup="true" aria-controls="filter-menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 01.628.74v2.288a2.25 2.25 0 01-.659 1.59l-4.682 4.683a2.25 2.25 0 00-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757l-1.937 1.55A.75.75 0 018 18.25v-5.757a2.25 2.25 0 00-.659-1.591L2.659 6.22A2.25 2.25 0 012 4.629V2.34a.75.75 0 01.628-.74z" clip-rule="evenodd"/></svg>
+                    Filter
+                </button>
+                <div id="filter-menu" data-filter-menu class="hidden absolute inset-x-0 top-full z-10 mt-2 sm:left-auto sm:right-0 sm:w-72 card p-5 shadow-xl text-text-secondary">
+                    <form method="GET" class="flex flex-col gap-4">
+                        <input type="hidden" name="view" value="grid">
+                        <div>
+                            <label for="status" class="block text-sm font-medium text-text-primary">Status</label>
+                            <select name="status" id="status" class="field-input mt-1.5">
+                                <option value="">All</option>
+                                {% for value, label in status_choices %}
+                                    <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="sort" class="block text-sm font-medium text-text-primary">Sort by</label>
+                            <select name="sort" id="sort" class="field-input mt-1.5">
+                                <option value="reading_first" {% if selected_sort == "reading_first" %}selected{% endif %}>Currently Reading first</option>
+                                <option value="start_date" {% if selected_sort == "start_date" %}selected{% endif %}>Start date</option>
+                                <option value="status" {% if selected_sort == "status" %}selected{% endif %}>Status</option>
+                                <option value="rating" {% if selected_sort == "rating" %}selected{% endif %}>Average rating</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <button type="submit" class="btn btn-primary">Apply</button>
+                            {% if selected_status or selected_sort != "reading_first" %}
+                                <a href="{{ url_for('books.index') }}" class="link-quiet">Clear</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
-</div>
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-  {% for book in books %}
-    {{ book_card(book, highlighted=(book.status.name == "CURRENTLY_READING")) }}
-  {% else %}
-    <p class="text-text-secondary col-span-full">No books match this filter.</p>
-  {% endfor %}
-</div>
+
+    {% if stats and books %}
+    <dl class="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border-subtle bg-border-subtle sm:grid-cols-3">
+        <div class="bg-surface px-5 py-4">
+            <dt class="text-xs font-medium uppercase tracking-wider">Books read</dt>
+            <dd class="mt-1 font-serif text-3xl font-semibold text-text-primary">{{ stats.finished }}</dd>
+        </div>
+        <div class="bg-surface px-5 py-4">
+            <dt class="text-xs font-medium uppercase tracking-wider">Club average</dt>
+            <dd class="mt-1 flex items-center gap-2 font-serif text-3xl font-semibold text-text-primary">
+                {% if stats.avg_rating %}{{ "%.1f"|format(stats.avg_rating) }}<svg viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-star"><path d="M10 1.5l2.6 5.3 5.9.8-4.2 4.1 1 5.8L10 14.9l-5.3 2.6 1-5.8-4.2-4.1 5.9-.8z"/></svg>{% else %}&mdash;{% endif %}
+            </dd>
+        </div>
+        <div class="col-span-2 bg-surface px-5 py-4 min-w-0 sm:col-span-1">
+            <dt class="text-xs font-medium uppercase tracking-wider">Club favourite</dt>
+            <dd class="mt-1.5 min-w-0">
+                {% if stats.top_rated %}
+                    <a href="{{ url_for('books.book_detail', book_id=stats.top_rated.id) }}" class="block truncate font-serif text-lg font-semibold italic text-text-primary hover:text-accent">{{ stats.top_rated.name }}</a>
+                    <span class="text-xs">{{ "%.1f"|format(stats.top_rated.average_rating) }} average</span>
+                {% else %}<span class="font-serif text-3xl font-semibold text-text-primary">&mdash;</span>{% endif %}
+            </dd>
+        </div>
+    </dl>
+    {% endif %}
+</header>
+
+{% if not books %}
+    {# ---------- Empty states ---------- #}
+    {% if selected_status %}
+        <p class="text-text-secondary">No books match this filter. <a href="{{ url_for('books.index') }}" class="link-quiet">Show all books</a></p>
+    {% else %}
+        <div class="card mx-auto max-w-2xl overflow-hidden text-center">
+            <div class="shelf justify-center pt-10" style="--slot: 9rem;" aria-hidden="true">
+                {% for h in ["70%", "88%", "78%", "95%", "82%"] %}
+                    <div><div class="w-10 rounded-t-sm border-2 border-dashed border-border-strong" style="height: {{ h }};"></div></div>
+                {% endfor %}
+            </div>
+            <div class="px-6 pb-10 pt-2">
+                <h2 class="font-serif text-3xl font-semibold text-text-primary">An empty shelf, full of promise</h2>
+                <p class="mx-auto mt-3 max-w-md text-text-secondary">Add the book the club is reading now, or the ones you've already finished, and start building your reading history together.</p>
+                <a href="{{ url_for('books.add_book') }}" class="btn btn-primary mt-7 px-6 py-2.5">Add your first book</a>
+            </div>
+        </div>
+    {% endif %}
+
+{% elif sections %}
+    {# ---------- Now reading ---------- #}
+    {% for book in sections.current %}
+        <a href="{{ url_for('books.book_detail', book_id=book.id) }}"
+           class="group relative mb-16 grid items-center gap-8 overflow-hidden rounded-3xl bg-accent-soft p-6 sm:grid-cols-[auto_1fr] sm:gap-12 sm:p-10">
+            {% if book.cover_url %}
+                <img src="{{ book.cover_url }}" alt="" aria-hidden="true" class="pointer-events-none absolute inset-0 h-full w-full scale-125 object-cover opacity-20 blur-3xl dark:opacity-15">
+            {% endif %}
+            <div class="relative mx-auto w-40 sm:w-56">
+                <div class="shadow-book rounded-[3px] transition-transform duration-500 motion-safe:-rotate-3 motion-safe:group-hover:rotate-0 motion-safe:group-hover:scale-[1.03]">
+                    {{ book_cover(book) }}
+                </div>
+            </div>
+            <div class="relative min-w-0 text-center sm:text-left">
+                <p class="eyebrow">
+                    Now reading
+                    {% if book.reading_start_date %}{% set days_in = (today - book.reading_start_date).days %}{% if days_in >= 0 %} &middot; day {{ days_in + 1 }}{% endif %}{% endif %}
+                </p>
+                <h2 class="mt-3 font-serif text-4xl font-semibold leading-[1.05] tracking-tight text-text-primary sm:text-6xl">{{ book.name }}</h2>
+                <p class="mt-3 font-serif text-xl italic text-text-secondary">by {{ book.author }}</p>
+                <div class="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm sm:justify-start">
+                    {% if book.picked_by %}
+                        <span class="inline-flex items-center gap-2">{{ avatar(book.picked_by, "h-7 w-7 text-xs") }}<span>Picked by <span class="font-medium text-text-primary">{{ book.picked_by.display_name }}</span></span></span>
+                    {% endif %}
+                    {% if book.reading_start_date %}<span>Started {{ book.reading_start_date|nice_date }}</span>{% endif %}
+                </div>
+                <span class="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
+                    Open the book
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 transition-transform group-hover:translate-x-1"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
+                </span>
+            </div>
+        </a>
+    {% endfor %}
+
+    {# ---------- Up next (face-out) ---------- #}
+    {% if sections.up_next %}
+        <section class="mb-16">
+            <div class="mb-6 flex items-baseline justify-between gap-4">
+                <h2 class="section-title">Up next</h2>
+                <p class="text-sm">{{ sections.up_next|length }} on deck</p>
+            </div>
+            <div class="shelf shelf-faceout">
+                {% for book in sections.up_next %}{{ faceout_book(book) }}{% endfor %}
+            </div>
+        </section>
+    {% endif %}
+
+    {# ---------- History (spines, one shelf per year) ---------- #}
+    {% if sections.history %}
+        <div class="mb-8 flex items-baseline justify-between gap-4">
+            <h2 class="section-title">Reading history</h2>
+            <p class="hidden text-sm sm:pointer-fine:block">Hover a spine for details</p>
+        </div>
+        {% for year, year_books in sections.history %}
+            {% set finished_n = year_books|selectattr("is_finished")|list|length %}
+            <section class="mb-12">
+                <div class="mb-5 flex items-baseline gap-4">
+                    <h3 class="font-serif text-4xl font-semibold italic tracking-tight text-text-primary/90">{{ year or "Undated" }}</h3>
+                    <p class="text-sm">
+                        {{ finished_n }} finished{% if year_books|length > finished_n %} &middot; {{ year_books|length - finished_n }} abandoned{% endif %}
+                    </p>
+                </div>
+                <div class="shelf">
+                    {% for book in year_books %}{{ book_spine(book) }}{% endfor %}
+                </div>
+            </section>
+        {% endfor %}
+    {% endif %}
+
+{% else %}
+    {# ---------- Flat cover grid (filters, sorts, "Covers" view) ---------- #}
+    <div class="grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
+        {% for book in books %}
+            {{ book_card(book, highlighted=(book.status.name == "CURRENTLY_READING")) }}
+        {% endfor %}
+    </div>
+{% endif %}
 {% endblock content %}

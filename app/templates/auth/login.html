@@ -1,42 +1,40 @@
 {% from "_macros.html" import form_field %}
-{% extends "base.html" %}
-{% block content %}
-<div class="max-w-sm mx-auto bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-    <h1 class="text-2xl font-serif font-semibold text-text-primary mb-4">Log In</h1>
+{% extends "auth/_layout.html" %}
+{% block title %}Log in · Spine Busters Book Club{% endblock %}
+{% block auth_card %}
+    <h1 class="font-serif text-3xl font-semibold tracking-tight text-text-primary">Welcome back</h1>
+    <p class="mt-1 mb-7 text-sm">Log in to see what the club is reading.</p>
     <form method="POST">
         {{ form.hidden_tag() }}
-        {{ form_field(form.username) }}
-        {{ form_field(form.password) }}
-        <button type="submit" class="inline-flex items-center rounded-md bg-btn-primary px-4 py-2 text-sm font-medium
-         text-white shadow-sm hover:bg-btn-primary-hover">Log In</button>
+        {{ form_field(form.username, autocomplete="username") }}
+        {{ form_field(form.password, autocomplete="current-password") }}
+        <button type="submit" class="btn btn-primary mt-1 w-full py-2.5">Log in</button>
     </form>
 
-    <div data-inline-edit class="mt-4">
-        <div data-inline-edit-view>
-            <button type="button" data-inline-edit-trigger class="text-sm text-text-secondary hover:text-stone-700 dark:hover:text-stone-200 underline">Have an invite token?</button>
+    <div class="mt-7 space-y-2 border-t border-border-subtle pt-5">
+        <div data-inline-edit>
+            <div data-inline-edit-view>
+                <button type="button" data-inline-edit-trigger class="link-quiet">Have an invite token?</button>
+            </div>
+            <div data-inline-edit-panel class="hidden">
+                <form id="invite-token-form" class="flex items-center gap-2">
+                    <input type="text" name="token" aria-label="Invite token" placeholder="e.g. cedar-forest-delta" class="field-input">
+                    <button type="submit" class="flex-none btn btn-primary px-3">Go</button>
+                    <button type="button" data-inline-edit-cancel class="flex-none link-quiet">Cancel</button>
+                </form>
+            </div>
         </div>
-        <div data-inline-edit-panel class="hidden mt-2">
-            <form id="invite-token-form" class="flex items-center gap-2">
-                <input type="text" name="token" aria-label="Invite token" placeholder="Invite token"
-                       class="block w-full rounded-md bg-input-bg border-stone-300 dark:border-stone-600 dark:text-text-primary shadow-sm focus:border-amber-600 focus:ring-amber-600 sm:text-sm">
-                <button type="submit" class="flex-none inline-flex items-center rounded-md bg-btn-primary px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-btn-primary-hover">Go</button>
-                <button type="button" data-inline-edit-cancel class="flex-none text-sm text-text-secondary hover:text-stone-700 dark:hover:text-stone-200 underline">Cancel</button>
-            </form>
+        <div data-inline-edit>
+            <div data-inline-edit-view>
+                <button type="button" data-inline-edit-trigger class="link-quiet">Have a password reset token?</button>
+            </div>
+            <div data-inline-edit-panel class="hidden">
+                <form id="reset-token-form" class="flex items-center gap-2">
+                    <input type="text" name="token" aria-label="Password reset token" placeholder="Reset token" class="field-input">
+                    <button type="submit" class="flex-none btn btn-primary px-3">Go</button>
+                    <button type="button" data-inline-edit-cancel class="flex-none link-quiet">Cancel</button>
+                </form>
+            </div>
         </div>
     </div>
-
-    <div data-inline-edit class="mt-2">
-        <div data-inline-edit-view>
-            <button type="button" data-inline-edit-trigger class="text-sm text-text-secondary hover:text-stone-700 dark:hover:text-stone-200 underline">Have a password reset token?</button>
-        </div>
-        <div data-inline-edit-panel class="hidden mt-2">
-            <form id="reset-token-form" class="flex items-center gap-2">
-                <input type="text" name="token" aria-label="Password reset token" placeholder="Reset token"
-                       class="block w-full rounded-md bg-input-bg border-stone-300 dark:border-stone-600 dark:text-text-primary shadow-sm focus:border-amber-600 focus:ring-amber-600 sm:text-sm">
-                <button type="submit" class="flex-none inline-flex items-center rounded-md bg-btn-primary px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-btn-primary-hover">Go</button>
-                <button type="button" data-inline-edit-cancel class="flex-none text-sm text-text-secondary hover:text-stone-700 dark:hover:text-stone-200 underline">Cancel</button>
-            </form>
-        </div>
-    </div>
-</div>
-{% endblock content %}
+{% endblock auth_card %}

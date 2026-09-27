@@ -1,100 +1,212 @@
-{% from "_macros.html" import form_field, score_field, status_badge, star_rating, rating_card %}
+{% from "_macros.html" import form_field, score_field, status_badge, star_rating, rating_card, book_cover, avatar %}
 {% extends "base.html" %}
-{% block content %}
-<div class="flex items-center justify-between mb-4">
-    {% if newer_book %}
-        <a href="{{ url_for('books.book_detail', book_id=newer_book.id) }}" class="text-sm text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100">‹ Newer</a>
-    {% else %}
-        <span></span>
-    {% endif %}
-    {% if older_book %}
-        <a href="{{ url_for('books.book_detail', book_id=older_book.id) }}" class="text-sm text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100">Older ›</a>
-    {% else %}
-        <span></span>
-    {% endif %}
-</div>
-<div class="flex gap-6 items-center">
+{% block title %}{{ book.name }} · Spine Busters Book Club{% endblock %}
+
+{% block hero %}
+{# Full-bleed header: the book's own cover, blurred and faded, sits behind the real one so
+   every book page picks up its cover's colours. Books without a cover image get the flat
+   accent tint instead. #}
+<section class="relative overflow-hidden border-b border-border-subtle bg-accent-soft">
     {% if book.cover_url %}
-        <img src="{{ book.cover_url }}" alt="" class="w-32 sm:w-40 aspect-[2/3] object-cover rounded-lg shadow-sm flex-none">
-    {% else %}
-        <div class="w-32 sm:w-40 aspect-[2/3] bg-surface-muted flex items-center justify-center text-stone-400 text-sm rounded-lg flex-none">No cover</div>
+        <img src="{{ book.cover_url }}" alt="" aria-hidden="true"
+             class="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-3xl dark:opacity-25">
     {% endif %}
-    <div>
-        <h1 class="text-3xl font-serif font-semibold text-text-primary">{{ book.name }}</h1>
-        <p class="text-text-secondary">{{ book.author }}</p>
-        <div class="mt-2 flex items-center gap-3">
-            {{ status_badge(book.status.value, book.status_label) }}
-            {% if book.is_finished and book.average_rating %}{{ star_rating(book.average_rating) }}{% endif %}
-        </div>
-        {% if book.picked_by %}<p class="mt-2 text-sm"><span class="text-xs text-text-secondary">Picked by</span> <span class="text-text-primary">{{ book.picked_by.display_name }}</span></p>{% endif %}
-        {% if book.reading_start_date %}<p class="text-sm"><span class="text-xs text-text-secondary">Start</span> <span class="text-text-primary">{{ book.reading_start_date.strftime('%b %-d, %Y') }}</span></p>{% endif %}
-        {% if book.reading_end_date %}<p class="text-sm"><span class="text-xs text-text-secondary">Finish</span> <span class="text-text-primary">{{ book.reading_end_date.strftime('%b %-d, %Y') }}</span></p>{% endif %}
-        {% if current_user.id == book.picked_by_id or current_user.is_admin %}
-        <div class="flex gap-2 mt-4">
-            <a href="{{ url_for('books.edit_book', book_id=book.id) }}" aria-label="Edit book" title="Edit book"
-               class="inline-flex items-center justify-center rounded-md bg-btn-primary p-2 text-white shadow-sm hover:bg-btn-primary-hover">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">
-                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793ZM11.379 5.793 3 14.172V17h2.828l8.38-8.379-2.83-2.828Z" />
-                </svg>
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-page-bg/70"></div>
+
+    <div class="relative mx-auto max-w-6xl px-4 pt-6 pb-10 sm:pb-14">
+        <nav class="mb-8 flex items-center justify-between text-sm font-medium" aria-label="Book navigation">
+            <a href="{{ url_for('books.index') }}" class="inline-flex items-center gap-1.5 py-2 text-text-secondary hover:text-text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clip-rule="evenodd"/></svg>
+                The Shelf
             </a>
-            <form method="POST" action="{{ url_for('books.delete_book', book_id=book.id) }}" data-confirm="Delete this book? This cannot be undone.">
-                {{ delete_form.hidden_tag() }}
-                <button type="submit" aria-label="Delete book" title="Delete book"
-                        class="inline-flex items-center justify-center rounded-md bg-btn-danger p-2 text-white shadow-sm hover:bg-btn-danger-hover">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">
-                        <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" />
-                    </svg>
-                </button>
-            </form>
+            <div class="flex items-center gap-1">
+                {% if newer_book %}
+                    <a href="{{ url_for('books.book_detail', book_id=newer_book.id) }}" class="rounded-full px-3 py-1.5 text-text-secondary hover:bg-surface/60 hover:text-text-primary" title="{{ newer_book.name }}">‹ Newer</a>
+                {% endif %}
+                {% if older_book %}
+                    <a href="{{ url_for('books.book_detail', book_id=older_book.id) }}" class="rounded-full px-3 py-1.5 text-text-secondary hover:bg-surface/60 hover:text-text-primary" title="{{ older_book.name }}">Older ›</a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <div class="grid items-end gap-8 sm:grid-cols-[auto_1fr] sm:gap-12">
+            <div class="mx-auto w-48 sm:w-60">
+                <div class="shadow-book rounded-[3px]">{{ book_cover(book) }}</div>
+            </div>
+            <div class="min-w-0 text-center sm:text-left">
+                {{ status_badge(book.status.value, book.status_label) }}
+                <h1 class="mt-4 font-serif text-4xl font-semibold leading-[1.05] tracking-tight text-text-primary sm:text-6xl">{{ book.name }}</h1>
+                <p class="mt-3 font-serif text-xl italic text-text-secondary sm:text-2xl">by {{ book.author }}</p>
+
+                <dl class="mt-8 flex flex-wrap justify-center gap-x-10 gap-y-4 text-sm sm:justify-start">
+                    {% if book.picked_by %}
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wider">Picked by</dt>
+                            <dd class="mt-1.5">
+                                {% if book.picked_by.is_admin %}
+                                    <span class="inline-flex items-center gap-2 font-medium text-text-primary">{{ avatar(book.picked_by, "h-6 w-6 text-xs") }}{{ book.picked_by.display_name }}</span>
+                                {% else %}
+                                    <a href="{{ url_for('members.profile', member_id=book.picked_by.id) }}" class="inline-flex items-center gap-2 font-medium text-text-primary hover:text-accent">{{ avatar(book.picked_by, "h-6 w-6 text-xs") }}{{ book.picked_by.display_name }}</a>
+                                {% endif %}
+                            </dd>
+                        </div>
+                    {% endif %}
+                    {% if book.reading_start_date %}
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wider">Started</dt>
+                            <dd class="mt-1.5 font-medium text-text-primary">{{ book.reading_start_date|nice_date }}</dd>
+                        </div>
+                    {% endif %}
+                    {% if book.reading_end_date %}
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wider">Finished</dt>
+                            <dd class="mt-1.5 font-medium text-text-primary">{{ book.reading_end_date|nice_date }}</dd>
+                        </div>
+                    {% endif %}
+                    {% if book.isbn %}
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wider">ISBN</dt>
+                            <dd class="mt-1.5 font-medium tabular-nums text-text-primary">{{ book.isbn }}</dd>
+                        </div>
+                    {% endif %}
+                </dl>
+
+                {% if current_user.id == book.picked_by_id or current_user.is_admin %}
+                <div class="mt-8 flex flex-wrap justify-center gap-2 sm:justify-start">
+                    <a href="{{ url_for('books.edit_book', book_id=book.id) }}" class="btn btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793ZM11.379 5.793 3 14.172V17h2.828l8.38-8.379-2.83-2.828Z" /></svg>
+                        Edit
+                    </a>
+                    <form method="POST" action="{{ url_for('books.delete_book', book_id=book.id) }}" data-confirm="Delete this book? This cannot be undone.">
+                        {{ delete_form.hidden_tag() }}
+                        <button type="submit" class="btn btn-danger-quiet">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" /></svg>
+                            Delete
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
         </div>
-        {% endif %}
     </div>
-</div>
+</section>
+{% endblock hero %}
 
+{% block content %}
 {% if book.is_finished %}
-<h2 class="text-xl font-serif font-semibold text-text-primary mt-8 mb-4">Ratings</h2>
+<div class="grid gap-10 lg:grid-cols-[20rem_1fr] lg:gap-14">
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    {% if existing_rating %}
-    <div data-inline-edit>
-        <div data-inline-edit-view>
-            {{ rating_card(existing_rating, own=True, delete_form=delete_form) }}
+    {# ---------- Club score ---------- #}
+    <aside class="lg:sticky lg:top-24 lg:self-start">
+        <div class="card p-6">
+            <p class="eyebrow">Club score</p>
+            {% if book.average_rating %}
+                <div class="mt-3 flex items-end gap-3">
+                    <span class="font-serif text-6xl font-semibold leading-none tracking-tight text-text-primary">{{ "%.1f"|format(book.average_rating) }}</span>
+                    <span class="pb-1 text-sm">/ 5</span>
+                </div>
+                <div class="mt-3">{{ star_rating(book.average_rating, 1.4) }}</div>
+                {% set max_count = distribution|map('last')|max %}
+                <ul class="mt-6 space-y-1.5" aria-label="Score breakdown">
+                    {% for stars, count in distribution %}
+                        <li class="flex items-center gap-3 text-xs">
+                            <span class="w-3 text-right font-semibold tabular-nums text-text-primary">{{ stars }}</span>
+                            <span class="h-2 flex-1 overflow-hidden rounded-full bg-surface-muted">
+                                <span class="block h-full rounded-full bg-star" style="width: {{ (count / max_count * 100) if max_count else 0 }}%;"></span>
+                            </span>
+                            <span class="w-3 tabular-nums">{{ count }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="mt-3 font-serif text-2xl italic text-text-primary">No scores yet</p>
+            {% endif %}
+
+            <div class="mt-6 border-t border-border-subtle pt-5 text-sm">
+                <p><span class="font-semibold text-text-primary">{{ rated_member_count }}</span> of {{ rated_member_count + unrated_members|length }} members have rated</p>
+                {% if unrated_members %}
+                    <div class="mt-3 flex items-center">
+                        <div class="flex -space-x-2">
+                            {% for m in unrated_members[:6] %}{{ avatar(m, "h-8 w-8 text-xs") }}{% endfor %}
+                        </div>
+                        {% if unrated_members|length > 6 %}<span class="ml-2 text-xs">+{{ unrated_members|length - 6 }}</span>{% endif %}
+                        <span class="ml-3 text-xs">still to weigh in</span>
+                    </div>
+                {% endif %}
+            </div>
         </div>
-        <div data-inline-edit-panel class="hidden bg-surface border border-border-subtle rounded-lg shadow-sm p-4">
+    </aside>
+
+    {# ---------- Reviews ---------- #}
+    <section>
+        <div class="mb-6 flex items-baseline justify-between gap-4">
+            <h2 class="section-title">What the club thought</h2>
+            {% if book.ratings %}<p class="text-sm">{{ book.ratings|length }} review{{ "s" if book.ratings|length != 1 }}</p>{% endif %}
+        </div>
+
+        {% if not existing_rating %}
+        <div class="card mb-6 border-accent/40 bg-accent-soft/40 p-6 sm:p-7">
+            <h3 class="font-serif text-2xl font-semibold text-text-primary">What did you think?</h3>
+            <p class="mt-1 mb-5 text-sm">Leave a score and a few words for the club.</p>
             <form method="POST">
                 {{ form.hidden_tag() }}
                 {{ score_field(form.score) }}
-                {{ form_field(form.comment) }}
-                <div class="flex gap-2">
-                    <button type="submit" class="inline-flex items-center rounded-md bg-btn-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-btn-primary-hover">Submit Review</button>
-                    <button type="button" data-inline-edit-cancel class="inline-flex items-center rounded-md border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-muted">Cancel</button>
-                </div>
+                {{ form_field(form.comment, placeholder="The ending, though…") }}
+                <button type="submit" class="btn btn-primary px-5">Post review</button>
             </form>
         </div>
-    </div>
-    {% endif %}
-
-    {% for rating in book.ratings %}
-        {% if rating.member_id != current_user.id %}
-            {{ rating_card(rating, own=False) }}
         {% endif %}
-    {% endfor %}
 
-    {% if not book.ratings %}
-        <p class="text-sm text-text-secondary col-span-full">No ratings yet.</p>
-    {% endif %}
+        <div class="grid gap-4 sm:grid-cols-2">
+            {% if existing_rating %}
+            <div data-inline-edit class="sm:col-span-2">
+                <div data-inline-edit-view class="h-full">
+                    {{ rating_card(existing_rating, own=True, delete_form=delete_form) }}
+                </div>
+                <div data-inline-edit-panel class="hidden card p-6">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        {{ score_field(form.score) }}
+                        {{ form_field(form.comment) }}
+                        <div class="flex gap-2">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" data-inline-edit-cancel class="btn btn-secondary">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            {% for rating in book.ratings %}
+                {% if rating.member_id != current_user.id %}
+                    {{ rating_card(rating, own=False) }}
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        {% if not book.ratings %}
+            <p class="font-serif text-lg italic">No reviews yet &mdash; be the first.</p>
+        {% endif %}
+    </section>
 </div>
 
-{% if not existing_rating %}
-<div class="max-w-sm bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mt-6">
-    <h3 class="text-lg font-serif font-semibold text-text-primary mb-4">Your Rating</h3>
-    <form method="POST">
-        {{ form.hidden_tag() }}
-        {{ score_field(form.score) }}
-        {{ form_field(form.comment) }}
-        <button type="submit" class="inline-flex items-center rounded-md bg-btn-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-btn-primary-hover">Submit Review</button>
-    </form>
-</div>
-{% endif %}
+{% elif book.status.name == "CURRENTLY_READING" %}
+    <div class="card mx-auto max-w-xl p-8 text-center">
+        <p class="eyebrow">In progress</p>
+        <p class="mt-3 font-serif text-2xl text-text-primary">The club is reading this one now.</p>
+        <p class="mt-2 text-sm">Reviews open once it's marked <span class="font-semibold text-text-primary">Finished</span> &mdash; no spoilers until then.</p>
+    </div>
+{% elif book.status.name == "TO_BE_READ" %}
+    <div class="card mx-auto max-w-xl p-8 text-center">
+        <p class="eyebrow">On deck</p>
+        <p class="mt-3 font-serif text-2xl text-text-primary">Waiting its turn on the shelf.</p>
+        <p class="mt-2 text-sm">Reviews open once the club has finished it.</p>
+    </div>
+{% else %}
+    <div class="card mx-auto max-w-xl p-8 text-center">
+        <p class="eyebrow">Did not finish</p>
+        <p class="mt-3 font-serif text-2xl text-text-primary">The club set this one aside.</p>
+        <p class="mt-2 text-sm">Not every book is for every reader.</p>
+    </div>
 {% endif %}
 {% endblock content %}

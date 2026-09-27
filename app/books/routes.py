@@ -1,5 +1,6 @@
 import os
 import re
+from collections import Counter
 from datetime import date
 
 import requests
@@ -53,6 +54,30 @@ def _sort_books(all_books, sort):
     return sorted(all_books, key=lambda b: b.reading_start_date or date.min, reverse=True)
 
 
+def _group_by_year(books):
+    # books must already be date-sorted; returns [(year or None, [books...]), ...] in order.
+    groups = []
+    for book in books:
+        year = book.reading_start_date.year if book.reading_start_date else None
+        if groups and groups[-1][0] == year:
+            groups[-1][1].append(book)
+        else:
+            groups.append((year, [book]))
+    return groups
+
+
+def _club_stats(books):
+    finished = [b for b in books if b.is_finished]
+    rated = [b for b in finished if b.average_rating is not None]
+    start_years = [b.reading_start_date.year for b in books if b.reading_start_date]
+    return {
+        "finished": len(finished),
+        "since": min(start_years) if start_years else None,
+        "avg_rating": sum(b.average_rating for b in rated) / len(rated) if rated else None,
+        "top_rated": max(rated, key=lambda b: b.average_rating) if rated else None,
+    }
+
+
 @bp.route("/")
 @login_required
 def index():
@@ -65,12 +90,34 @@ def index():
 
     all_books = _sort_books(query.all(), sort)
 
+    # The default, unfiltered view is laid out as a bookshelf rather than one flat grid:
+    # Currently Reading books get a featured banner, then "Up Next" (To Be Read) face-out,
+    # then past reads as spines on one shelf per start year. Any explicit filter/sort -- or
+    # ?view=grid, the "Covers" toggle -- falls back to the plain cover grid so the user's
+    # chosen ordering is shown as-is.
+    sections = None
+    stats = None
+    view = request.args.get("view", "shelf")
+    if sort == "reading_first" and not status_filter and view != "grid":
+        stats = _club_stats(all_books)
+        sections = {
+            "current": [b for b in all_books if b.status == BookStatus.CURRENTLY_READING],
+            "up_next": [b for b in all_books if b.status == BookStatus.TO_BE_READ],
+            "history": _group_by_year(
+                _sort_books([b for b in all_books if b.status in (BookStatus.FINISHED, BookStatus.ABANDONED)], "start_date")
+            ),
+        }
+
     return render_template(
         "books/list.html",
         books=all_books,
+        sections=sections,
+        stats=stats,
+        today=date.today(),
         status_choices=[(s.name, s.value.replace("_", " ").title()) for s in BookStatus],
         selected_status=status_filter,
         selected_sort=sort,
+        view=view,
     )
 
 
@@ -209,6 +256,7 @@ def add_book():
         )
         db.session.add(book)
         db.session.commit()
+        flash(f"Added \"{book.name}\".", "success")
         return redirect(url_for("books.book_detail", book_id=book.id))
 
     return render_template("books/form.html", form=form)
@@ -227,7 +275,7 @@ def book_detail(book_id):
     delete_form = DeleteForm()
 
     if request.method == "POST" and book.status != BookStatus.FINISHED:
-        flash("Ratings can only be submitted for finished books.")
+        flash("Ratings can only be submitted for finished books.", "error")
         return redirect(url_for("books.book_detail", book_id=book_id))
 
     if form.validate_on_submit():
@@ -243,11 +291,24 @@ def book_detail(book_id):
             )
             db.session.add(new_rating)
         db.session.commit()
+        flash("Your rating was saved.", "success")
         return redirect(url_for("books.book_detail", book_id=book_id))
+
+    # Score breakdown for the "club score" panel: whole-star buckets 5..1 (a 4.5 counts as 4).
+    buckets = Counter(int(r.score) for r in book.ratings)
+    distribution = [(stars, buckets.get(stars, 0)) for stars in range(5, 0, -1)]
+    rated_ids = {r.member_id for r in book.ratings}
+    # Admin accounts aren't reading members, so they're never "still to weigh in" -- and an
+    # admin's own rating (if any) isn't counted toward "N of M members have rated" either.
+    unrated_members = [m for m in Member.query.filter_by(is_admin=False).order_by(Member.display_name).all() if m.id not in rated_ids]
+    rated_member_count = sum(1 for r in book.ratings if not r.member.is_admin)
 
     return render_template(
         "books/detail.html",
         book=book,
+        distribution=distribution,
+        unrated_members=unrated_members,
+        rated_member_count=rated_member_count,
         form=form,
         delete_form=delete_form,
         existing_rating=existing_rating,
@@ -281,6 +342,7 @@ def edit_book(book_id):
         book.reading_start_date = form.reading_start_date.data
         book.reading_end_date = form.reading_end_date.data
         db.session.commit()
+        flash("Book updated.", "success")
         return redirect(url_for("books.book_detail", book_id=book.id))
 
     return render_template("books/form.html", form=form, book=book)
@@ -295,10 +357,12 @@ def delete_book(book_id):
     if not _can_manage(book):
         abort(403)
     if book.ratings:
-        flash("Can't delete a book that has ratings")
+        flash("Can't delete a book that has ratings", "error")
         return redirect(url_for("books.book_detail", book_id=book.id))
+    name = book.name  # read before commit -- the deleted instance is expired afterwards
     db.session.delete(book)
     db.session.commit()
+    flash(f"Deleted \"{name}\".", "success")
     return redirect(url_for("books.index"))
 
 
@@ -310,4 +374,5 @@ def delete_rating(book_id):
     rating = Rating.query.filter_by(book_id=book_id, member_id=current_user.id).first_or_404()
     db.session.delete(rating)
     db.session.commit()
+    flash("Your rating was deleted.", "success")
     return redirect(url_for("books.book_detail", book_id=book_id))

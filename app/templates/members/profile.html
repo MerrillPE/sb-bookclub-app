@@ -1,0 +1,104 @@
+{% from "_macros.html" import avatar, book_cover, faceout_book, star_rating, status_badge %}
+{% extends "base.html" %}
+{% block title %}{{ member.display_name }} · Spine Busters Book Club{% endblock %}
+{% block content %}
+<a href="{{ url_for('members.index') }}" class="mb-6 inline-flex items-center gap-1.5 py-2 text-sm font-medium text-text-secondary hover:text-text-primary">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clip-rule="evenodd"/></svg>
+    All members
+</a>
+
+{# ---------- Header ---------- #}
+<header class="mb-12 flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:text-left">
+    {{ avatar(member, "h-24 w-24 text-4xl sm:h-28 sm:w-28 sm:text-5xl") }}
+    <div class="min-w-0">
+        <p class="eyebrow">Club member</p>
+        <h1 class="mt-2 font-serif text-4xl font-semibold tracking-tight text-text-primary sm:text-6xl">{{ member.display_name }}</h1>
+        <p class="mt-1">@{{ member.username }}</p>
+        {% if taste_delta is not none %}
+            <p class="mt-3 font-serif text-lg italic text-text-primary">
+                {% if taste_delta >= 0.25 %}Scores books {{ "%.1f"|format(taste_delta) }} stars more generously than the rest of the club.
+                {% elif taste_delta <= -0.25 %}Scores books {{ "%.1f"|format(-taste_delta) }} stars more harshly than the rest of the club.
+                {% else %}Scores books right in line with the rest of the club.{% endif %}
+            </p>
+        {% endif %}
+    </div>
+</header>
+
+<dl class="mb-14 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border-subtle bg-border-subtle sm:grid-cols-4">
+    <div class="bg-surface px-5 py-4">
+        <dt class="text-xs font-medium uppercase tracking-wider">Books picked</dt>
+        <dd class="mt-1 font-serif text-3xl font-semibold text-text-primary">{{ picks|length }}</dd>
+    </div>
+    <div class="bg-surface px-5 py-4">
+        <dt class="text-xs font-medium uppercase tracking-wider">Reviews</dt>
+        <dd class="mt-1 font-serif text-3xl font-semibold text-text-primary">{{ reviews|length }}</dd>
+    </div>
+    <div class="bg-surface px-5 py-4">
+        <dt class="text-xs font-medium uppercase tracking-wider">Avg score given</dt>
+        <dd class="mt-1 flex items-center gap-2 font-serif text-3xl font-semibold text-text-primary">
+            {% if avg_given %}{{ "%.1f"|format(avg_given) }}<svg viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-star"><path d="M10 1.5l2.6 5.3 5.9.8-4.2 4.1 1 5.8L10 14.9l-5.3 2.6 1-5.8-4.2-4.1 5.9-.8z"/></svg>{% else %}&mdash;{% endif %}
+        </dd>
+    </div>
+    <div class="bg-surface px-5 py-4">
+        <dt class="text-xs font-medium uppercase tracking-wider">Their picks score</dt>
+        <dd class="mt-1 flex items-center gap-2 font-serif text-3xl font-semibold text-text-primary">
+            {% if picks_avg %}{{ "%.1f"|format(picks_avg) }}<svg viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-star"><path d="M10 1.5l2.6 5.3 5.9.8-4.2 4.1 1 5.8L10 14.9l-5.3 2.6 1-5.8-4.2-4.1 5.9-.8z"/></svg>{% else %}&mdash;{% endif %}
+        </dd>
+    </div>
+</dl>
+
+{# ---------- Picks ---------- #}
+<section class="mb-16">
+    <div class="mb-6 flex items-baseline justify-between gap-4">
+        <h2 class="section-title">Books {{ member.display_name }} picked</h2>
+        {% if picks %}<p class="text-sm">{{ picks|length }}</p>{% endif %}
+    </div>
+    {% if picks %}
+        <div class="shelf shelf-faceout">
+            {% for book in picks %}{{ faceout_book(book) }}{% endfor %}
+        </div>
+    {% else %}
+        <p class="font-serif text-lg italic">Hasn't picked a book yet &mdash; their turn is coming.</p>
+    {% endif %}
+</section>
+
+{# ---------- Reviews ---------- #}
+<section>
+    <div class="mb-6 flex items-baseline justify-between gap-4">
+        <h2 class="section-title">{{ member.display_name }}'s reviews</h2>
+        {% if reviews %}<p class="text-sm">{{ reviews|length }}</p>{% endif %}
+    </div>
+    {% if reviews %}
+        <div class="grid gap-4 lg:grid-cols-2">
+            {% for rating, others_avg in reviews %}
+                {% set book = rating.book %}
+                <article class="card flex gap-4 p-5 sm:gap-5">
+                    <a href="{{ url_for('books.book_detail', book_id=book.id) }}" class="w-16 flex-none self-start rounded-[3px] shadow-md sm:w-20" tabindex="-1" aria-hidden="true">
+                        {{ book_cover(book) }}
+                    </a>
+                    <div class="min-w-0 flex-1">
+                        <a href="{{ url_for('books.book_detail', book_id=book.id) }}" class="font-serif text-lg font-semibold leading-snug text-text-primary hover:text-accent">{{ book.name }}</a>
+                        <p class="text-sm">{{ book.author }}</p>
+                        <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <span class="inline-flex items-center gap-1.5">{{ star_rating(rating.score, 0.95) }}<span class="text-xs font-semibold tabular-nums text-text-primary">{{ "%.1f"|format(rating.score) }}</span></span>
+                            {% if others_avg is not none %}
+                                {% set diff = rating.score - others_avg %}
+                                <span class="text-xs">
+                                    rest of club {{ "%.1f"|format(others_avg) }}
+                                    {% if diff >= 0.25 %}<span class="font-semibold text-emerald-700 dark:text-emerald-400">+{{ "%.1f"|format(diff) }}</span>
+                                    {% elif diff <= -0.25 %}<span class="font-semibold text-btn-danger">{{ "%.1f"|format(diff) }}</span>{% endif %}
+                                </span>
+                            {% endif %}
+                        </div>
+                        {% if rating.comment %}
+                            <blockquote class="mt-3 border-l-2 border-accent/40 pl-3 font-serif italic leading-relaxed text-text-primary">{{ rating.comment }}</blockquote>
+                        {% endif %}
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="font-serif text-lg italic">No reviews yet.</p>
+    {% endif %}
+</section>
+{% endblock content %}

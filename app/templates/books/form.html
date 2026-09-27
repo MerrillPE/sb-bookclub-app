@@ -1,35 +1,82 @@
-{% from "_macros.html" import form_field %}
+{% from "_macros.html" import form_field, cover_palette %}
 {% extends "base.html" %}
+{% block title %}{{ "Edit " ~ book.name if book else "Add a book" }} · Spine Busters Book Club{% endblock %}
 {% block content %}
-<div class="max-w-md mx-auto bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-    <h1 class="text-2xl font-serif font-semibold text-text-primary mb-4">Book Details</h1>
-    <form method="POST">
+<div class="mb-8">
+    <p class="eyebrow">{{ "Edit book" if book else "New on the shelf" }}</p>
+    <h1 class="mt-2 font-serif text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl">{{ book.name if book else "Add a book" }}</h1>
+</div>
+
+<div class="grid gap-10 lg:grid-cols-[1fr_20rem] lg:gap-14">
+    <form method="POST" class="card p-6 sm:p-8">
         {{ form.hidden_tag() }}
-        {{ form_field(form.title) }}
-        {{ form_field(form.author) }}
-        {{ form_field(form.cover_url) }}
-        {{ form_field(form.isbn) }}
-        <div class="mb-4">
-            <button type="button" data-book-lookup
-                    class="inline-flex items-center rounded-md border border-stone-300 dark:border-stone-600 bg-surface px-3 py-1.5 text-sm font-medium text-text-secondary shadow-sm hover:bg-surface-muted">
-                Look up on Open Library
-            </button>
-            <p data-book-lookup-error class="hidden mt-1 text-sm text-text-secondary">No match found &mdash; enter details manually.</p>
-            <div data-book-lookup-candidates class="hidden mt-2 space-y-2"></div>
+
+        <h2 class="mb-5 font-serif text-xl font-semibold text-text-primary">The book</h2>
+        {{ form_field(form.title, placeholder="e.g. Piranesi") }}
+        {{ form_field(form.author, placeholder="e.g. Susanna Clarke") }}
+        <div class="mb-6 rounded-xl border border-dashed border-border-strong bg-surface-muted/60 p-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <p class="text-sm"><span class="font-medium text-text-primary">Fill in the rest automatically.</span> Search Open Library by ISBN, or by title and author.</p>
+                <button type="button" data-book-lookup class="btn btn-secondary px-3 py-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd"/></svg>
+                    Look up
+                </button>
+            </div>
+            <p data-book-lookup-error class="hidden mt-2 text-sm text-text-secondary">No match found &mdash; enter details manually.</p>
+            <div data-book-lookup-candidates class="hidden mt-3 space-y-2"></div>
         </div>
-        {{ form_field(form.status) }}
-        {% if current_user.is_admin %}
-            {{ form_field(form.picked_by) }}
-        {% endif %}
-        <div class="flex gap-4">
-            {{ form_field(form.reading_start_date, width_class="flex-1") }}
-            {{ form_field(form.reading_end_date, width_class="flex-1") }}
+        <div class="grid gap-x-4 sm:grid-cols-[2fr_1fr]">
+            {{ form_field(form.cover_url, placeholder="https://…") }}
+            {{ form_field(form.isbn) }}
         </div>
-        <div class="flex items-center gap-3">
-            <button type="submit" class="inline-flex items-center rounded-md bg-btn-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-btn-primary-hover">Save Book</button>
-            <a href="{{ url_for('books.book_detail', book_id=book.id) if book else url_for('books.index') }}"
-               class="inline-flex items-center rounded-md border border-stone-300 dark:border-stone-600 px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-muted">Cancel</a>
+
+        <h2 class="mt-4 mb-5 border-t border-border-subtle pt-6 font-serif text-xl font-semibold text-text-primary">The reading</h2>
+        <div class="grid gap-x-4 sm:grid-cols-2">
+            {{ form_field(form.status) }}
+            {% if current_user.is_admin %}
+                {{ form_field(form.picked_by) }}
+            {% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-x-4">
+            {{ form_field(form.reading_start_date) }}
+            {{ form_field(form.reading_end_date) }}
+        </div>
+
+        <div class="mt-2 flex items-center gap-3 border-t border-border-subtle pt-6">
+            <button type="submit" class="btn btn-primary px-6">Save book</button>
+            <a href="{{ url_for('books.book_detail', book_id=book.id) if book else url_for('books.index') }}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
+
+    {# Live preview, driven by books.js ([data-book-preview]): mirrors the book_cover/spine
+       macros so you can see how the book will sit on the shelf before saving. #}
+    <aside data-book-preview data-palette='{{ cover_palette|tojson }}' class="hidden lg:block lg:sticky lg:top-24 lg:self-start" aria-hidden="true">
+        <p class="eyebrow mb-4">Preview</p>
+        <div class="shelf shelf-faceout rounded-2xl bg-surface-muted/60 pt-6" style="--slot: 15rem; column-gap: 1.5rem;">
+            <div>
+                <div class="@container relative aspect-[2/3] overflow-hidden rounded-[3px] shadow-book" style="height: calc(var(--slot) - 0.25rem);">
+                    <div data-preview-generated class="absolute inset-0">
+                        <div class="absolute inset-[7%] border border-current opacity-40"></div>
+                        <div class="absolute inset-[12%] flex flex-col items-center justify-center text-center">
+                            <p data-preview-title class="font-serif font-semibold leading-[1.1] text-[11cqw] line-clamp-5"></p>
+                            <div class="my-[6cqw] h-px w-[25%] bg-current opacity-60"></div>
+                            <p data-preview-author class="uppercase tracking-[0.15em] text-[5.5cqw] opacity-80 line-clamp-2"></p>
+                        </div>
+                    </div>
+                    <img data-preview-img alt="" class="absolute inset-0 hidden h-full w-full object-cover">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 w-[8%] bg-gradient-to-r from-black/25 via-white/10 to-transparent"></div>
+                </div>
+            </div>
+            <div>
+                <div data-preview-spine class="spine">
+                    <span class="spine-band mt-3"></span>
+                    <span data-preview-title class="spine-title-main flex-1 px-1 py-3 font-serif text-[0.9rem] font-semibold"></span>
+                    <span data-preview-spine-author class="spine-title mb-2 max-h-[28%] text-[0.58rem] uppercase tracking-[0.2em] opacity-75"></span>
+                    <span class="spine-band mb-2.5"></span>
+                </div>
+            </div>
+        </div>
+        <p class="mt-4 text-xs leading-relaxed">No cover image? The book gets its own cloth-bound cover and spine, coloured by its title.</p>
+    </aside>
 </div>
 {% endblock content %}

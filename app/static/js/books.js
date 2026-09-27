@@ -46,7 +46,12 @@ document.querySelectorAll("[data-star-picker]").forEach((picker) => {
 function fillBookFields({ title, author, cover_url, isbn }) {
   const setValue = (id, value) => {
     const field = document.getElementById(id);
-    if (field && value) field.value = value;
+    if (field && value) {
+      field.value = value;
+      // Programmatic value changes don't fire "input" on their own -- dispatch one so the
+      // live preview (initBookPreview below) picks up auto-filled values too.
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    }
   };
   setValue("title", title);
   setValue("author", author);
@@ -56,7 +61,7 @@ function fillBookFields({ title, author, cover_url, isbn }) {
 
 function createSpinner() {
   const spinner = document.createElement("span");
-  spinner.className = "inline-block h-4 w-4 rounded-full border-2 border-stone-300 border-t-amber-600 animate-spin";
+  spinner.className = "inline-block h-4 w-4 rounded-full border-2 border-border-strong border-t-accent animate-spin";
   spinner.setAttribute("aria-hidden", "true");
   return spinner;
 }
@@ -73,7 +78,7 @@ function makeCandidateButton(candidateData, className, label, onPick) {
 function addCoverThumb(thumbs, candidate, coverEntry, pick) {
   const thumbButton = makeCandidateButton(
     { ...candidate, cover_url: coverEntry.cover_url, isbn: coverEntry.isbn },
-    "block rounded border border-stone-200 dark:border-stone-600 overflow-hidden hover:border-amber-500",
+    "block rounded border border-border-subtle overflow-hidden hover:border-accent hover:ring-2 hover:ring-accent/30 transition",
     "",
     pick,
   );
@@ -105,7 +110,7 @@ function renderLookupCandidates(container, candidates) {
     const year = candidate.year ? ` (${candidate.year})` : "";
     const mainButton = makeCandidateButton(
       candidate,
-      "flex items-center gap-3 w-full text-left rounded-md border border-stone-200 dark:border-stone-600 px-3 py-2 text-sm text-text-secondary hover:bg-surface-muted",
+      "flex items-center gap-3 w-full text-left rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm text-text-secondary hover:border-accent hover:text-text-primary transition-colors",
       "",
       pick,
     );
@@ -132,7 +137,7 @@ function renderLookupCandidates(container, candidates) {
 
       const toggle = document.createElement("button");
       toggle.type = "button";
-      toggle.className = "mt-1 text-xs text-amber-700 hover:underline";
+      toggle.className = "mt-1 text-xs text-accent hover:underline";
       toggle.textContent = "Show more covers";
 
       let loaded = false;
@@ -209,3 +214,68 @@ document.querySelectorAll("[data-book-lookup]").forEach((button) => {
     }
   });
 });
+
+// Live cover + spine preview on the add/edit book form (books/form.html). Mirrors the
+// book_cover/spine macros in _macros.html: keep titleSeed() in step with the `title_seed`
+// Jinja filter (app/__init__.py) and the size rules with the spine macro, so the preview
+// matches what the saved book will actually look like on the shelf.
+const SPINE_HEIGHTS = ["84%", "90%", "95%", "99%"];
+const SPINE_WIDTHS = ["2.7rem", "3.1rem", "3.7rem", "4.2rem"];
+
+function spineWidth(title) {
+  const length = [...title].length;
+  return SPINE_WIDTHS[length <= 9 ? 0 : length <= 16 ? 1 : length <= 24 ? 2 : 3];
+}
+
+function titleSeed(title) {
+  let sum = 0;
+  for (const ch of title) sum += ch.codePointAt(0); // code points, same as Python's ord()
+  return sum;
+}
+
+function initBookPreview(preview) {
+  const palette = JSON.parse(preview.dataset.palette);
+  const titleField = document.getElementById("title");
+  const authorField = document.getElementById("author");
+  const coverField = document.getElementById("cover_url");
+  const generated = preview.querySelector("[data-preview-generated]");
+  const img = preview.querySelector("[data-preview-img]");
+  const spine = preview.querySelector("[data-preview-spine]");
+  if (!titleField || !authorField || !coverField || !generated || !img || !spine) return;
+
+  img.addEventListener("error", () => img.classList.add("hidden"));
+  img.addEventListener("load", () => img.classList.toggle("hidden", img.naturalWidth <= 1));
+
+  const update = () => {
+    const title = titleField.value.trim();
+    const author = authorField.value.trim();
+    const seed = titleSeed(title);
+    const [bg, fg] = palette[seed % palette.length];
+
+    preview.querySelectorAll("[data-preview-title]").forEach((el) => {
+      el.textContent = title || "Your book";
+    });
+    preview.querySelector("[data-preview-author]").textContent = author || "Author";
+    preview.querySelector("[data-preview-spine-author]").textContent = (author || "Author").split(/\s+/).pop();
+
+    generated.style.backgroundColor = bg;
+    generated.style.color = fg;
+    spine.style.setProperty("--spine-bg", bg);
+    spine.style.setProperty("--spine-fg", fg);
+    spine.style.height = SPINE_HEIGHTS[Math.floor(seed / 3) % 4];
+    spine.style.width = spineWidth(title || "Your book");
+
+    const url = coverField.value.trim();
+    if (!url) {
+      img.classList.add("hidden");
+      img.removeAttribute("src");
+    } else if (img.getAttribute("src") !== url) {
+      img.src = url; // shown by the load listener once it actually loads
+    }
+  };
+
+  [titleField, authorField, coverField].forEach((field) => field.addEventListener("input", update));
+  update();
+}
+
+document.querySelectorAll("[data-book-preview]").forEach(initBookPreview);

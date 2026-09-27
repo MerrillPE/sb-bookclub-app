@@ -1,0 +1,15 @@
+{# Shared header + tabs for the admin portal pages. #}
+{% extends "base.html" %}
+{% block content %}
+<div class="mb-8">
+    <p class="eyebrow">Club admin</p>
+    <h1 class="mt-2 font-serif text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl">{% block admin_title %}{% endblock %}</h1>
+    <nav class="mt-6 flex gap-6 border-b border-border-subtle text-sm font-medium" aria-label="Admin sections">
+        {% for endpoint, label in [("admin.members", "Members"), ("admin.invites", "Invites")] %}
+            <a href="{{ url_for(endpoint) }}"
+               class="-mb-px border-b-2 pb-3 transition-colors {{ 'border-accent text-text-primary' if request.endpoint == endpoint else 'border-transparent text-text-secondary hover:text-text-primary' }}">{{ label }}</a>
+        {% endfor %}
+    </nav>
+</div>
+{% block admin_content %}{% endblock %}
+{% endblock content %}

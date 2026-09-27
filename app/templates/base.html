@@ -11,56 +11,110 @@
                 document.documentElement.classList.toggle('dark', dark);
             })();
         </script>
+        <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
         <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     </head>
-    <body class="bg-page-bg text-text-secondary">
-        <div id="page-loading-bar" class="hidden fixed inset-x-0 top-0 z-50 h-1 bg-amber-500"></div>
-        <nav class="sticky top-0 z-20 bg-nav-bg text-nav-fg px-4 py-3 border-b border-border-subtle">
-            <div class="max-w-4xl mx-auto flex items-center justify-between">
-                <a href="{{ url_for('home') }}" class="text-lg font-serif font-semibold">Spine Busters Book Club</a>
-                <div class="flex items-center gap-4">
-                    <button type="button" data-theme-toggle class="hover:text-btn-primary" aria-label="Toggle dark mode">
+    <body class="flex min-h-screen flex-col bg-page-bg font-sans text-text-secondary">
+        <div id="page-loading-bar" class="hidden fixed inset-x-0 top-0 z-50 h-0.5 bg-accent"></div>
+        <nav class="sticky top-0 z-20 border-b border-border-subtle bg-nav-bg/85 text-nav-fg backdrop-blur-md">
+            <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+                <div class="flex items-center gap-8">
+                    <a href="{{ url_for('home') }}" class="group flex items-center gap-2.5">
+                        <img src="{{ url_for('static', filename='img/favicon.svg') }}" alt="" class="h-8 w-8 transition-transform duration-300 motion-safe:group-hover:-rotate-3">
+                        <span class="font-serif text-xl font-semibold italic tracking-tight">Spine Busters</span>
+                    </a>
+                    {% if current_user.is_authenticated %}
+                        {% set on_shelf = request.endpoint in ("books.index", "books.book_detail") %}
+                        <a href="{{ url_for('books.index') }}"
+                           class="hidden sm:inline-block text-sm font-medium py-1 border-b-2 transition-colors {{ 'border-accent text-text-primary' if on_shelf else 'border-transparent text-text-secondary hover:text-text-primary' }}">The Shelf</a>
+                        {% set on_members = request.endpoint and request.endpoint.startswith("members.") %}
+                        <a href="{{ url_for('members.index') }}"
+                           class="hidden sm:inline-block text-sm font-medium py-1 border-b-2 transition-colors {{ 'border-accent text-text-primary' if on_members else 'border-transparent text-text-secondary hover:text-text-primary' }}">Members</a>
+                    {% endif %}
+                </div>
+                <div class="flex items-center gap-2 sm:gap-3">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('books.add_book') }}" class="btn btn-primary px-3 sm:px-4" aria-label="Add a book">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"/></svg>
+                            <span class="hidden sm:inline">Add a book</span>
+                        </a>
+                    {% endif %}
+                    <button type="button" data-theme-toggle class="rounded-full p-2 text-text-secondary hover:bg-surface-muted hover:text-text-primary transition-colors" aria-label="Toggle dark mode">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 block dark:hidden"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 9a1 1 0 110 2h-1a1 1 0 110-2h1zM4 9a1 1 0 110 2H3a1 1 0 110-2h1zm.343-6.657a1 1 0 011.414 0l.707.707A1 1 0 115.05 4.464l-.707-.707a1 1 0 010-1.414zm0 12.728a1 1 0 010-1.414l.707-.707a1 1 0 111.414 1.414l-.707.707a1 1 0 01-1.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z"/></svg>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 hidden dark:block"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
                     </button>
                     {% if current_user.is_authenticated %}
+                        {% from "_macros.html" import avatar %}
                         <div class="relative">
-                            <button type="button" data-user-menu-toggle class="flex items-center gap-2 hover:text-btn-primary" aria-expanded="false" aria-haspopup="true" aria-controls="user-menu">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-6 w-6"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-5.5-2.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM10 12a5.99 5.99 0 00-4.793 2.39A6.483 6.483 0 0010 16.5a6.483 6.483 0 004.793-2.11A5.99 5.99 0 0010 12z" clip-rule="evenodd"/></svg>
-                                <span class="text-sm font-medium">{{ current_user.display_name }}</span>
+                            <button type="button" data-user-menu-toggle class="flex items-center rounded-full transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" aria-expanded="false" aria-haspopup="true" aria-controls="user-menu" aria-label="Account menu">
+                                {{ avatar(current_user, "h-9 w-9 text-sm") }}
                             </button>
-                            <div id="user-menu" data-user-menu class="hidden absolute right-0 mt-2 w-40 bg-surface border border-border-subtle rounded-lg shadow-sm py-1 text-text-secondary">
-                                <a href="{{ url_for('books.add_book') }}" class="block px-4 py-2 text-sm hover:bg-surface-muted">Add a Book</a>
-                                {% if current_user.is_admin %}
-                                    <a href="{{ url_for('admin.invites') }}" class="block px-4 py-2 text-sm hover:bg-surface-muted">Manage Invites</a>
-                                    <a href="{{ url_for('admin.members') }}" class="block px-4 py-2 text-sm hover:bg-surface-muted">Manage Members</a>
-                                {% endif %}
-                                <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-sm hover:bg-surface-muted">Log out</a>
+                            <div id="user-menu" data-user-menu class="hidden absolute right-0 mt-3 w-56 overflow-hidden card shadow-xl text-text-secondary">
+                                <div class="border-b border-border-subtle px-4 py-3">
+                                    <p class="text-sm font-medium text-text-primary">{{ current_user.display_name }}</p>
+                                    <p class="text-xs">@{{ current_user.username }}{% if current_user.is_admin %} &middot; admin{% endif %}</p>
+                                </div>
+                                <div class="py-1">
+                                    <a href="{{ url_for('books.index') }}" class="block px-4 py-2.5 text-sm hover:bg-surface-muted hover:text-text-primary sm:hidden">The Shelf</a>
+                                    <a href="{{ url_for('members.index') }}" class="block px-4 py-2.5 text-sm hover:bg-surface-muted hover:text-text-primary sm:hidden">Members</a>
+                                    {% if not current_user.is_admin %}
+                                        <a href="{{ url_for('members.profile', member_id=current_user.id) }}" class="block px-4 py-2.5 text-sm hover:bg-surface-muted hover:text-text-primary">Your profile</a>
+                                    {% endif %}
+                                    {% if current_user.is_admin %}
+                                        <a href="{{ url_for('admin.invites') }}" class="block px-4 py-2.5 text-sm hover:bg-surface-muted hover:text-text-primary">Manage invites</a>
+                                        <a href="{{ url_for('admin.members') }}" class="block px-4 py-2.5 text-sm hover:bg-surface-muted hover:text-text-primary">Manage members</a>
+                                    {% endif %}
+                                    <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2.5 text-sm hover:bg-surface-muted hover:text-text-primary">Log out</a>
+                                </div>
                             </div>
                         </div>
                     {% else %}
-                        <a href="{{ url_for('auth.login') }}" class="hover:text-btn-primary">Log in</a>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-secondary">Log in</a>
                     {% endif %}
                 </div>
             </div>
         </nav>
-        <main class="max-w-4xl mx-auto px-4 py-8">
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="mb-4 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 p-3 text-sm text-rose-700 dark:text-rose-300">
-                        <ul>
-                        {% for message in messages %}
-                            <li>{{ message }}</li>
-                        {% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
-            {% endwith %}
+
+        {% set flash_styles = {
+            "success": "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300",
+            "error": "bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300",
+        } %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mx-auto w-full max-w-6xl px-4 pt-6">
+                    {% for category, message in messages %}
+                        <div class="mb-2 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm {{ flash_styles.get(category, 'bg-surface border-border-subtle text-text-primary') }}" role="status">
+                            {% if category == "success" %}
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 flex-none"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+                            {% else %}
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 flex-none"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+                            {% endif %}
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {# Full-bleed page header (e.g. the book detail backdrop) -- outside <main>'s max-width. #}
+        {% block hero %}{% endblock %}
+
+        <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:py-10 motion-safe:animate-fade-up">
             {% block content %}{% endblock %}
         </main>
-        <script type="module" src={{ url_for('static', filename='js/main.js') }}></script>
+
+        <footer class="border-t border-border-subtle">
+            <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-text-secondary sm:flex-row">
+                <span class="flex items-center gap-2">
+                    <img src="{{ url_for('static', filename='img/favicon.svg') }}" alt="" class="h-5 w-5 opacity-80">
+                    <span class="font-serif text-sm italic">Spine Busters Book Club</span>
+                </span>
+                <span>Read together. Argue about it after.</span>
+            </div>
+        </footer>
+        <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
     </body>
 </html>

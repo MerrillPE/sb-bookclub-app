@@ -37,6 +37,22 @@ def create_app(test_config=None):
     from app import admin
     app.register_blueprint(admin.bp)
 
+    from app import members
+    app.register_blueprint(members.bp)
+
+    @app.template_filter("nice_date")
+    def nice_date(value):
+        # "Sep 3, 2026" -- built by hand rather than strftime("%-d"), which is glibc-only and
+        # raises ValueError on Windows.
+        return f"{value:%b} {value.day}, {value.year}" if value else ""
+
+    @app.template_filter("title_seed")
+    def title_seed(value):
+        # Stable per-title number used to pick a generated cover/spine's colour and size.
+        # Keyed on the title (not the row id) so the add-book form's live preview -- which has
+        # no id yet -- can compute the same value client-side (see titleSeed() in books.js).
+        return sum(ord(c) for c in (value or ""))
+
     @app.cli.command("create-invite")
     def create_invite():
         from app.models import Invite

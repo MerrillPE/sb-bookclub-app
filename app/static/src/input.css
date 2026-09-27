@@ -3,50 +3,224 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --font-serif: "Lora", serif;
+    --font-serif: "Fraunces", "Iowan Old Style", Georgia, serif;
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
     --color-page-bg: var(--page-bg);
     --color-surface: var(--surface);
     --color-surface-muted: var(--surface-muted);
     --color-nav-bg: var(--nav-bg);
     --color-nav-fg: var(--nav-fg);
     --color-border-subtle: var(--border-subtle);
+    --color-border-strong: var(--border-strong);
     --color-text-primary: var(--text-primary);
     --color-text-secondary: var(--text-secondary);
+    --color-accent: var(--btn-primary);
+    --color-accent-soft: var(--accent-soft);
     --color-btn-primary: var(--btn-primary);
     --color-btn-primary-hover: var(--btn-primary-hover);
+    --color-btn-primary-fg: var(--btn-primary-fg);
     --color-btn-danger: var(--btn-danger);
     --color-btn-danger-hover: var(--btn-danger-hover);
     --color-input-bg: var(--input-bg);
+    --color-star: var(--star);
+    --color-wood: var(--wood);
+
+    --animate-fade-up: fade-up 0.4s ease-out both;
+
+    @keyframes fade-up {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 }
 
+/* "Paper and ink" light palette; warm lamplit dark palette. Every themed colour is a token
+   here -- retuning is a one-line edit, never a template sweep. */
 :root {
-    --page-bg: #FBF7EC;
-    --surface: var(--color-white);
-    --surface-muted: var(--color-stone-50);
+    --page-bg: #F7F1E5;
+    --surface: #FFFDF8;
+    --surface-muted: #F1E9DA;
     --nav-bg: var(--page-bg);
     --nav-fg: var(--text-primary);
-    --border-subtle: var(--color-stone-200);
-    --text-primary: var(--color-stone-900);
-    --text-secondary: var(--color-stone-600);
-    --btn-primary: #C1622D;
-    --btn-primary-hover: #A14F22;
-    --btn-danger: #DC2626;
-    --btn-danger-hover: #B91C1C;
-    --input-bg: var(--color-stone-100);
+    --border-subtle: #E6DBC6;
+    --border-strong: #D2C3A8;
+    --text-primary: #211B15;
+    --text-secondary: #6E6153;
+    --btn-primary: #B5532A;
+    --btn-primary-hover: #95431F;
+    --btn-primary-fg: #FFFFFF;
+    --accent-soft: #F2DFCD;
+    --btn-danger: #C0362C;
+    --btn-danger-hover: #9F2A22;
+    --input-bg: #FFFDF8;
+    --star: #D6952A;
+    --wood: #A26F3F;
+    --wood-light: #C4925C;
+    --wood-dark: #6F4926;
 }
 
 .dark {
-    --page-bg: #1C1712;
-    --surface: var(--color-stone-800);
-    --surface-muted: var(--color-stone-800);
+    color-scheme: dark;
+    --page-bg: #16120E;
+    --surface: #211C17;
+    --surface-muted: #2A241E;
     --nav-bg: var(--page-bg);
     --nav-fg: var(--text-primary);
-    --border-subtle: var(--color-stone-700);
-    --text-primary: var(--color-stone-100);
-    --text-secondary: var(--color-stone-400);
-    --btn-primary: #D97D46;
-    --btn-primary-hover: #C16530;
-    --btn-danger: #F87171;
-    --btn-danger-hover: #EF4444;
-    --input-bg: var(--color-stone-700);
+    --border-subtle: #382F27;
+    --border-strong: #4D4237;
+    --text-primary: #F2EADC;
+    --text-secondary: #B1A38F;
+    --btn-primary: #DE7E45;
+    --btn-primary-hover: #EA945F;
+    --btn-primary-fg: #1B120B;
+    --accent-soft: #33221A;
+    --btn-danger: #F07167;
+    --btn-danger-hover: #F58C84;
+    --input-bg: #1B1713;
+    --star: #EAB450;
+    --wood: #5C3F27;
+    --wood-light: #7B5738;
+    --wood-dark: #36251A;
+}
+
+@layer base {
+    body {
+        -webkit-font-smoothing: antialiased;
+    }
+    ::selection {
+        background: var(--accent-soft);
+        color: var(--text-primary);
+    }
+}
+
+/* Shared component classes -- one definition per button/input variant instead of the same
+   utility string repeated in every template. Utilities still override these (components
+   layer sorts below utilities), so a one-off `px-3` etc. on top works as expected. */
+@layer components {
+    .btn {
+        @apply inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors cursor-pointer
+            focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+    }
+    .btn-primary {
+        @apply bg-btn-primary text-btn-primary-fg shadow-sm hover:bg-btn-primary-hover;
+    }
+    .btn-secondary {
+        @apply border border-border-strong bg-surface text-text-primary hover:bg-surface-muted;
+    }
+    .btn-danger-quiet {
+        @apply border border-border-strong bg-surface text-text-secondary hover:border-btn-danger hover:text-btn-danger;
+    }
+    .field-input {
+        @apply block w-full rounded-lg bg-input-bg border border-border-strong px-3 py-2 text-text-primary shadow-xs
+            placeholder:text-text-secondary/60
+            focus:border-accent focus:outline-none focus:ring-3 focus:ring-accent/20 sm:text-sm;
+    }
+    .link-quiet {
+        /* py-1.5 enlarges the tap target on touch screens without changing the text layout */
+        @apply py-1.5 text-sm text-text-secondary underline decoration-border-strong underline-offset-2 hover:text-text-primary hover:decoration-current;
+    }
+    .card {
+        @apply rounded-2xl border border-border-subtle bg-surface shadow-sm;
+    }
+    .eyebrow {
+        @apply text-xs font-semibold uppercase tracking-[0.18em] text-accent;
+    }
+    .section-title {
+        @apply font-serif text-2xl font-semibold tracking-tight text-text-primary;
+    }
+
+    /* A wooden bookshelf: fixed-height slots on a flex-wrap row, with a plank painted under
+       every row by a repeating background gradient. Because every slot is exactly --slot
+       tall and rows are separated by exactly --plank + --air, the planks line up with the
+       rows at any width, and each plank spans the full shelf even on a half-empty last row. */
+    .shelf {
+        --slot: 15rem;
+        --plank: 0.8rem;
+        --air: 2.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        align-content: flex-start;
+        column-gap: 3px;
+        row-gap: calc(var(--plank) + var(--air));
+        padding: 0 1rem calc(var(--plank) + 0.75rem);
+        background-image: repeating-linear-gradient(
+            to bottom,
+            transparent 0 var(--slot),
+            var(--wood-light) var(--slot) calc(var(--slot) + 2px),
+            var(--wood) calc(var(--slot) + 2px) calc(var(--slot) + var(--plank) - 3px),
+            var(--wood-dark) calc(var(--slot) + var(--plank) - 3px) calc(var(--slot) + var(--plank)),
+            rgb(0 0 0 / 0.16) calc(var(--slot) + var(--plank)),
+            transparent calc(var(--slot) + var(--plank) + 0.6rem) calc(var(--slot) + var(--plank) + var(--air))
+        );
+    }
+    .shelf > * {
+        height: var(--slot);
+        display: flex;
+        align-items: flex-end;
+    }
+    .shelf-faceout {
+        --slot: 12rem;
+        column-gap: 1.25rem;
+        padding-inline: 1.25rem;
+    }
+    @media (min-width: 640px) {
+        .shelf-faceout { --slot: 14rem; column-gap: 1.75rem; }
+    }
+
+    /* A single book spine. Cloth colour comes from inline --spine-bg/--spine-fg; the layered
+       gradient fakes the rounded-spine highlight and edge shading. */
+    .spine {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow: hidden;
+        border-radius: 3px 3px 1px 1px;
+        background-color: var(--spine-bg);
+        color: var(--spine-fg);
+        background-image: linear-gradient(
+            90deg,
+            rgb(0 0 0 / 0.28) 0%,
+            rgb(255 255 255 / 0.10) 12%,
+            rgb(255 255 255 / 0.02) 30%,
+            rgb(0 0 0 / 0) 70%,
+            rgb(0 0 0 / 0.30) 100%
+        );
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.25), inset 0 -3px 0 rgb(0 0 0 / 0.12);
+        /* Tailwind v4's translate-* utilities set the `translate` property, not `transform`;
+           the leaning (abandoned) tilt uses `rotate`, so the two compose independently. */
+        transition: translate 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s;
+    }
+    .spine-band {
+        width: 70%;
+        height: 0;
+        border-top: 1px solid currentColor;
+        border-bottom: 1px solid currentColor;
+        padding-top: 2px;
+        opacity: 0.55;
+        flex: none;
+    }
+    .spine-title {
+        writing-mode: vertical-rl;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-height: 0;
+    }
+    /* The title itself may wrap onto a second vertical line -- spines get wider for longer
+       titles (see the spine macro), so most titles fit whole instead of truncating. */
+    .spine-title-main {
+        writing-mode: vertical-rl;
+        overflow: hidden;
+        min-height: 0;
+        line-height: 1.12;
+        text-wrap: balance;
+    }
+}
+
+@utility shadow-book {
+    box-shadow:
+        0 1px 1px rgb(0 0 0 / 0.08),
+        0 8px 16px -4px rgb(0 0 0 / 0.25),
+        0 24px 40px -12px rgb(0 0 0 / 0.30);
 }
