@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from functools import wraps
 
 from flask import (
@@ -33,7 +33,8 @@ def invites():
     if form.validate_on_submit():
         expires_at = None
         if form.expires_at.data:
-            expires_at = datetime.combine(form.expires_at.data, datetime.max.time()).replace(tzinfo=timezone.utc)
+            # Naive UTC, per the _naive_utcnow() convention in app/models.py.
+            expires_at = datetime.combine(form.expires_at.data, datetime.max.time())
         Invite.create(expires_at=expires_at)
         flash("Invite created.", "success")
         return redirect(url_for("admin.invites"))
@@ -54,7 +55,7 @@ def invites():
 def revoke_invite(invite_id):
     if not RevokeInviteForm().validate_on_submit():
         abort(400)
-    invite = Invite.query.get_or_404(invite_id)
+    invite = db.get_or_404(Invite, invite_id)
     if invite.used_at is not None:
         flash("Can't revoke an invite that's already been used.", "error")
         return redirect(url_for("admin.invites"))
@@ -86,7 +87,7 @@ def members():
 def generate_reset(member_id):
     if not GenerateResetForm().validate_on_submit():
         abort(400)
-    member = Member.query.get_or_404(member_id)
+    member = db.get_or_404(Member, member_id)
     PasswordReset.query.filter_by(member_id=member.id, used_at=None).delete()
     PasswordReset.create(member)
     flash(f"Reset link generated for {member.display_name}.", "success")

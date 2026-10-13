@@ -4,11 +4,9 @@ from flask import (
 
 from flask_login import login_user, logout_user, login_required, current_user
 
-from app.models import Member, Invite, PasswordReset
+from app.models import Member, Invite, PasswordReset, _naive_utcnow
 from app.extensions import db, login_manager
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordForm
-
-from datetime import datetime, timezone
 
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -58,7 +56,7 @@ def register(token):
         member.set_password(form.password.data)
         db.session.add(member)
         
-        invite.used_at = datetime.now(timezone.utc)
+        invite.used_at = _naive_utcnow()
         
         db.session.commit()
         
@@ -86,7 +84,7 @@ def reset_password(token):
     form = ResetPasswordForm()
     if form.validate_on_submit():
         reset.member.set_password(form.password.data)
-        reset.used_at = datetime.now(timezone.utc)
+        reset.used_at = _naive_utcnow()
         db.session.commit()
 
         login_user(reset.member)

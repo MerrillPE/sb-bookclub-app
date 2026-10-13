@@ -265,7 +265,7 @@ def add_book():
 @bp.route("/<int:book_id>", methods=["GET", "POST"])
 @login_required
 def book_detail(book_id):
-    book = Book.query.get_or_404(book_id)
+    book = db.get_or_404(Book, book_id)
     ordered_books = _sort_books(Book.query.all(), "start_date")
     idx = next(i for i, b in enumerate(ordered_books) if b.id == book_id)
     newer_book = ordered_books[idx - 1] if idx > 0 else None
@@ -320,7 +320,7 @@ def book_detail(book_id):
 @bp.route("/<int:book_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_book(book_id):
-    book = Book.query.get_or_404(book_id)
+    book = db.get_or_404(Book, book_id)
     if not _can_manage(book):
         abort(403)
 
@@ -353,7 +353,7 @@ def edit_book(book_id):
 def delete_book(book_id):
     if not DeleteForm().validate_on_submit():
         abort(400)
-    book = Book.query.get_or_404(book_id)
+    book = db.get_or_404(Book, book_id)
     if not _can_manage(book):
         abort(403)
     if book.ratings:
