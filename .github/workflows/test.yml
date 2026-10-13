@@ -1,8 +1,10 @@
 name: Tests
 
-# Runs on pull requests only. deploy.yml (push to main) is deliberately left independent --
-# to make these block a deploy, mark the two jobs below as required status checks in the
-# repo's branch protection rules for main.
+# Runs on pull requests to main. Both jobs are required status checks in the "main branch
+# protection" ruleset (Settings -> Rules -> Rulesets), which also requires a PR for every
+# change -- so a PR can't merge, and deploy.yml (push to main) can't run, unless both pass.
+# The ruleset matches checks by job ID: renaming `python` or `js` below, or giving either a
+# `name:`, means updating the ruleset too, or every PR will wait on a check that never reports.
 on:
   pull_request:
     branches: [main]
