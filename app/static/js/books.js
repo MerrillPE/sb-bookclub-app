@@ -1,4 +1,5 @@
 import { initDropdown } from "./utils.js";
+import { scoreFromFraction, spineHeight, spineWidth, titleSeed } from "./shelf.js";
 
 initDropdown("[data-filter-toggle]", "[data-filter-menu]");
 
@@ -10,15 +11,13 @@ document.querySelectorAll("[data-star-picker]").forEach((picker) => {
   if (!select || !fill || !display) return;
 
   const applyValue = (value) => {
-    const clamped = Math.max(1, Math.min(5, value));
-    select.value = clamped.toFixed(1);
+    select.value = value.toFixed(1);
     select.dispatchEvent(new Event("change", { bubbles: true }));
   };
 
   const valueFromPointer = (clientX) => {
     const rect = picker.getBoundingClientRect();
-    const fraction = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    return Math.round(fraction * 5 * 2) / 2;
+    return scoreFromFraction((clientX - rect.left) / rect.width);
   };
 
   picker.addEventListener("pointerdown", (event) => {
@@ -216,22 +215,7 @@ document.querySelectorAll("[data-book-lookup]").forEach((button) => {
 });
 
 // Live cover + spine preview on the add/edit book form (books/form.html). Mirrors the
-// book_cover/spine macros in _macros.html: keep titleSeed() in step with the `title_seed`
-// Jinja filter (app/__init__.py) and the size rules with the spine macro, so the preview
-// matches what the saved book will actually look like on the shelf.
-const SPINE_HEIGHTS = ["84%", "90%", "95%", "99%"];
-const SPINE_WIDTHS = ["2.7rem", "3.1rem", "3.7rem", "4.2rem"];
-
-function spineWidth(title) {
-  const length = [...title].length;
-  return SPINE_WIDTHS[length <= 9 ? 0 : length <= 16 ? 1 : length <= 24 ? 2 : 3];
-}
-
-function titleSeed(title) {
-  let sum = 0;
-  for (const ch of title) sum += ch.codePointAt(0); // code points, same as Python's ord()
-  return sum;
-}
+// book_cover/spine macros in _macros.html -- the seed/size rules live in shelf.js.
 
 function initBookPreview(preview) {
   const palette = JSON.parse(preview.dataset.palette);
@@ -262,7 +246,7 @@ function initBookPreview(preview) {
     generated.style.color = fg;
     spine.style.setProperty("--spine-bg", bg);
     spine.style.setProperty("--spine-fg", fg);
-    spine.style.height = SPINE_HEIGHTS[Math.floor(seed / 3) % 4];
+    spine.style.height = spineHeight(seed);
     spine.style.width = spineWidth(title || "Your book");
 
     const url = coverField.value.trim();

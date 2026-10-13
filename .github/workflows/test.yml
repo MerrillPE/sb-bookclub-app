@@ -1,0 +1,45 @@
+name: Tests
+
+# Runs on pull requests to main. Both jobs are required status checks in the "main branch
+# protection" ruleset (Settings -> Rules -> Rulesets), which also requires a PR for every
+# change -- so a PR can't merge, and deploy.yml (push to main) can't run, unless both pass.
+# The ruleset matches checks by job ID: renaming `python` or `js` below, or giving either a
+# `name:`, means updating the ruleset too, or every PR will wait on a check that never reports.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13" # matches the Dockerfile's base image
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - run: pip install -r requirements-dev.txt
+
+      # Branch coverage catches untested if/else arms that line coverage hides; the floor
+      # sits a few points under the current ~99% so a real drop fails the PR, not noise.
+      - run: pytest --cov=app --cov-branch --cov-report=term-missing --cov-fail-under=95
+
+  js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test

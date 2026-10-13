@@ -11,3 +11,4 @@ __pycache__/
 instance/
 .env
 .env.*
+tests/

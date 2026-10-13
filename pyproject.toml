@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tests"]
+markers = ["slow: runs the full Alembic migration chain"]
+# Fail on deprecations (incl. SQLAlchemy's LegacyAPIWarning, a DeprecationWarning subclass)
+# so they get fixed when introduced instead of piling up in the summary.
+filterwarnings = ["error::DeprecationWarning"]

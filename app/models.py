@@ -46,7 +46,7 @@ class Member(UserMixin, db.Model):
     
 @login_manager.user_loader
 def load_user(user_id):
-    return Member.query.get(int(user_id))
+    return db.session.get(Member, int(user_id))
 
 class Invite(db.Model):
     id = db.Column(db.Integer, primary_key=True)
