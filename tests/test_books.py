@@ -222,3 +222,121 @@ def test_bogus_status_filter_is_ignored(client, alice, captured_templates):
     resp = client.get("/books/?status=NOPE")
     assert resp.status_code == 200
     assert len(context_for(captured_templates, "books/list.html")["books"]) == 1
+
+
+# --- column-length limits ------------------------------------------------------------------
+# SQLite ignores String(n) limits, but production Postgres raises on an over-length value --
+# so the form has to reject it first, or the user gets a 500 instead of a validation error.
+
+TOO_LONG = [
+    ("title", 121), ("author", 121), ("cover_url", 256), ("isbn", 21),
+]
+
+
+@pytest.mark.parametrize("field,length", TOO_LONG)
+def test_add_book_rejects_over_length_fields(client, alice, field, length):
+    resp = client.post("/books/add", data={**BOOK_FORM, field: "x" * length})
+    assert resp.status_code == 200
+    assert Book.query.count() == 0
+
+
+@pytest.mark.parametrize("field,length", TOO_LONG)
+def test_edit_book_rejects_over_length_fields(client, alice, field, length):
+    book = make_book(alice, name="Dune")
+    resp = client.post(f"/books/{book.id}/edit", data={**BOOK_FORM, field: "x" * length})
+    assert resp.status_code == 200
+    db.session.refresh(book)
+    assert book.name == "Dune"
+
+
+def test_book_fields_accept_max_length(client, alice):
+    client.post("/books/add", data={
+        **BOOK_FORM, "title": "t" * 120, "author": "a" * 120, "cover_url": "c" * 255, "isbn": "1" * 20,
+    })
+    assert Book.query.one().name == "t" * 120
+
+
+# --- edit / delete edge cases --------------------------------------------------------------
+
+def test_edit_book_member_cannot_reassign_picker(client, alice):
+    bob = make_member("bob")
+    book = make_book(alice)
+    client.post(f"/books/{book.id}/edit", data={**BOOK_FORM, "picked_by": str(bob.id)})
+    db.session.refresh(book)
+    assert book.picked_by_id == alice.id
+
+
+def test_failed_edit_keeps_submitted_values(client, alice, captured_templates):
+    # The GET-only prefill in edit_book() must not clobber what the user just submitted.
+    book = make_book(alice, name="Dune")
+    resp = client.post(f"/books/{book.id}/edit", data={**BOOK_FORM, "title": "Dune Messiah", "author": ""})
+    assert resp.status_code == 200
+    assert context_for(captured_templates, "books/form.html")["form"].title.data == "Dune Messiah"
+    db.session.refresh(book)
+    assert book.name == "Dune"
+
+
+def test_admin_can_delete_others_book(client):
+    book = make_book(make_member("bob"))
+    login(client, make_member("admin", is_admin=True))
+    client.post(f"/books/{book.id}/delete")
+    assert Book.query.count() == 0
+
+
+def test_delete_missing_book_404(client, alice):
+    assert client.post("/books/999/delete").status_code == 404
+
+
+def test_rating_requires_score(client, alice):
+    book = make_book(alice)
+    resp = client.post(f"/books/{book.id}", data={"score": "", "comment": "No score"})
+    assert resp.status_code == 200
+    assert Rating.query.count() == 0
+
+
+def test_rating_survives_unfinishing_book_and_can_still_be_deleted(client, alice):
+    book = make_book(alice, status=BookStatus.FINISHED)
+    make_rating(book, alice, 4.0)
+    client.post(f"/books/{book.id}/edit", data={**BOOK_FORM, "status": "CURRENTLY_READING"})
+    assert Rating.query.count() == 1
+    client.post(f"/books/{book.id}/rating/delete")
+    assert Rating.query.count() == 0
+
+
+def test_prev_next_with_undated_books_visits_every_book(client, alice, captured_templates):
+    # Undated books all sort as date.min -- walking "older" from the newest must still reach
+    # every book exactly once, with no skips or cycles.
+    books = [make_book(alice, name=f"Undated {i}") for i in range(3)] + [make_book(alice, name="Dated", start=d(2024))]
+    client.get(f"/books/{books[-1].id}")
+    seen = [books[-1]]
+    while (older := context_for(captured_templates, "books/detail.html")["older_book"]) is not None:
+        seen.append(older)
+        client.get(f"/books/{older.id}")
+    assert sorted(b.id for b in seen) == sorted(b.id for b in books)
+
+
+# --- reading dates -------------------------------------------------------------------------
+
+def test_end_date_before_start_date_rejected(client, alice):
+    resp = client.post("/books/add", data={**BOOK_FORM, "reading_start_date": "2026-03-10", "reading_end_date": "2026-03-09"})
+    assert resp.status_code == 200
+    assert b"End date can&#39;t be before the start date" in resp.data
+    assert Book.query.count() == 0
+
+
+def test_edit_end_date_before_start_date_rejected(client, alice):
+    book = make_book(alice, start=d(2026, 3, 10))
+    client.post(f"/books/{book.id}/edit", data={**BOOK_FORM, "reading_start_date": "2026-03-10", "reading_end_date": "2026-03-01"})
+    db.session.refresh(book)
+    assert book.reading_end_date is None
+
+
+@pytest.mark.parametrize("start,end", [
+    ("2026-03-10", "2026-03-10"),  # finished the same day
+    ("2026-03-10", "2026-04-01"),
+    ("", "2026-04-01"),            # end date alone has nothing to compare against
+    ("2026-03-10", ""),
+])
+def test_valid_reading_dates_accepted(client, alice, start, end):
+    client.post("/books/add", data={**BOOK_FORM, "reading_start_date": start, "reading_end_date": end})
+    assert Book.query.count() == 1

@@ -35,7 +35,10 @@ def test_login_page_redirects_when_already_logged_in(client):
     assert client.get("/auth/login").status_code == 302
 
 
-@pytest.mark.parametrize("url", ["/books/", "/books/add", "/members/", "/admin/invites", "/auth/logout"])
+@pytest.mark.parametrize("url", [
+    "/books/", "/books/add", "/members/", "/admin/invites", "/auth/logout",
+    "/books/api/lookup?title=Dune", "/books/api/lookup/covers?work=/works/OL1W",
+])
 def test_login_required(client, url):
     resp = client.get(url)
     assert resp.status_code == 302
@@ -138,3 +141,39 @@ def test_reset_success(client):
     assert alice.check_password("brand-new-pw")
     assert not alice.check_password("old-password")
     assert db.session.get(PasswordReset, reset.id).used_at is not None
+
+
+def test_login_does_not_leak_to_other_clients(app, client):
+    # Guards conftest's _forget_cached_user: without it, a client with no session cookie
+    # would be treated as whoever logged in last.
+    login(client, make_member("alice"))
+    assert client.get("/books/").status_code == 200
+    assert app.test_client().get("/books/").status_code == 302
+
+
+def test_login_unknown_username(client):
+    resp = client.post("/auth/login", data={"username": "ghost", "password": "password123"})
+    assert b"Invalid username or password" in resp.data
+    assert logged_in_user_id(client) is None
+
+
+def test_logout_ends_session(client):
+    login(client, make_member("alice"))
+    client.get("/auth/logout")
+    assert logged_in_user_id(client) is None
+    assert client.get("/books/").status_code == 302
+
+
+@pytest.mark.parametrize("data,message", [
+    ({"password": "brand-new-pw", "confirm_password": "different-pw"}, b"Passwords must match"),
+    ({"password": "short", "confirm_password": "short"}, b"at least 8"),
+])
+def test_reset_validation_errors_leave_token_usable(client, data, message):
+    alice = make_member("alice", password="old-password")
+    reset = PasswordReset.create(alice)
+    resp = client.post(f"/auth/reset-password/{reset.token}", data=data)
+    assert resp.status_code == 200
+    assert message in resp.data
+    assert db.session.get(PasswordReset, reset.id).used_at is None
+    db.session.refresh(alice)
+    assert alice.check_password("old-password")

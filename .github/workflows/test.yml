@@ -24,7 +24,9 @@ jobs:
 
       - run: pip install -r requirements-dev.txt
 
-      - run: pytest --cov=app --cov-report=term-missing
+      # Branch coverage catches untested if/else arms that line coverage hides; the floor
+      # sits a few points under the current ~99% so a real drop fails the PR, not noise.
+      - run: pytest --cov=app --cov-branch --cov-report=term-missing --cov-fail-under=95
 
   js:
     runs-on: ubuntu-latest

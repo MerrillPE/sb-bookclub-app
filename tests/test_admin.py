@@ -111,3 +111,43 @@ def test_members_page_lists_pending_reset(client, admin, captured_templates):
     client.get("/admin/members")
     _, context = captured_templates[-1]
     assert context["pending_resets"][alice.id].member_id == alice.id
+
+
+def test_generate_reset_for_missing_member_404(client, admin):
+    assert client.post("/admin/members/999/reset").status_code == 404
+    assert PasswordReset.query.count() == 0
+
+
+def test_members_page_hides_expired_reset(client, admin, captured_templates):
+    alice = make_member("alice")
+    reset = PasswordReset.create(alice)
+    reset.expires_at = _naive_utcnow() - timedelta(seconds=1)
+    db.session.commit()
+    client.get("/admin/members")
+    _, context = captured_templates[-1]
+    assert alice.id not in context["pending_resets"]
+
+
+@pytest.mark.parametrize("days_ago", [1, 365])
+def test_create_invite_rejects_past_expiry(client, admin, days_ago):
+    expires = _naive_utcnow().date() - timedelta(days=days_ago)
+    resp = client.post("/admin/invites", data={"expires_at": expires.isoformat()})
+    assert resp.status_code == 200
+    assert b"must be in the future" in resp.data
+    assert Invite.query.count() == 0
+
+
+def test_create_invite_allows_expiry_today(client, admin):
+    # The invite stays valid until the end of the chosen day (UTC), so "today" is still future.
+    client.post("/admin/invites", data={"expires_at": _naive_utcnow().date().isoformat()})
+    invite = Invite.query.one()
+    assert not invite.is_expired
+
+
+@pytest.mark.parametrize("method", ["get", "post"])
+def test_expiry_picker_greys_out_past_days(client, admin, method):
+    # The min attribute is only a browser hint (CreateInviteForm still validates), but it has
+    # to match the server rule -- today in UTC -- including when a failed POST re-renders.
+    data = {"expires_at": "2000-01-01"} if method == "post" else None
+    page = getattr(client, method)("/admin/invites", data=data).get_data(as_text=True)
+    assert f'min="{_naive_utcnow().date().isoformat()}"' in page

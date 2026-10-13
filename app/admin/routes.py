@@ -7,7 +7,7 @@ from flask import (
 
 from flask_login import login_required, current_user
 
-from app.models import Invite, Member, PasswordReset
+from app.models import Invite, Member, PasswordReset, _naive_utcnow
 from app.extensions import db
 from app.admin.forms import CreateInviteForm, RevokeInviteForm, GenerateResetForm
 
@@ -38,6 +38,11 @@ def invites():
         Invite.create(expires_at=expires_at)
         flash("Invite created.", "success")
         return redirect(url_for("admin.invites"))
+
+    # Grey out past days in the date picker. Only a browser hint -- CreateInviteForm's
+    # validate_expires_at is the real check -- so it uses the same "today in UTC" rule. Set
+    # per request (not as a static render_kw on the form class) since "today" changes.
+    form.expires_at.render_kw = {"min": _naive_utcnow().date().isoformat()}
 
     all_invites = Invite.query.order_by(Invite.created_at.desc()).all()
     all_invites.sort(key=lambda i: i.status_label != "Pending")

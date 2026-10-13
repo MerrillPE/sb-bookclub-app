@@ -134,3 +134,17 @@ def test_covers_capped_at_twelve(client, fake_get):
 def test_covers_failure_returns_empty(client, fake_get):
     fake_get.response = requests.ConnectionError("down")
     assert client.get("/books/api/lookup/covers?work=/works/OL1W").get_json() == {"covers": []}
+
+
+def test_author_only_lookup(client, fake_get):
+    fake_get.response = FakeResponse({"docs": [doc("Dune", author="Frank Herbert")]})
+    body = client.get("/books/api/lookup?author=Frank Herbert").get_json()
+    assert body["candidates"][0]["author"] == "Frank Herbert"
+    assert "title" not in fake_get.calls[0]["params"]
+
+
+def test_isbn10_with_check_digit_x(client, fake_get):
+    fake_get.response = FakeResponse({"docs": [doc("Right Book", isbns=["080442957X"])]})
+    body = client.get("/books/api/lookup?isbn=0-8044-2957-X").get_json()
+    assert body["match"]["title"] == "Right Book"
+    assert fake_get.calls[0]["params"]["isbn"] == "080442957X"

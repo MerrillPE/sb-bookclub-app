@@ -1,13 +1,29 @@
 from datetime import date
 
 import pytest
-from flask import template_rendered
+from flask import g, request_started, request_tearing_down, template_rendered
 from sqlalchemy import DateTime, event
 from sqlalchemy.orm import Session
 
 from app import create_app
 from app.extensions import db
 from app.models import Book, BookStatus, Member, Rating
+
+
+def _forget_cached_user(sender, **extra):
+    # The fixtures below hold one app context open for the whole test, and the test client
+    # reuses it for every request -- so Flask-Login's per-request user cache (g._login_user)
+    # would otherwise carry over between requests, and even between clients. Clearing it makes
+    # each request load its user from its own session cookie, like a real request would.
+    g.pop("_login_user", None)
+
+
+def _discard_uncommitted(sender, **extra):
+    # Same shared-context problem, for the database: the test and every request share one
+    # db.session, so a route that changed data but forgot db.session.commit() would still
+    # look right to the test's assertions. In production that change dies with the request's
+    # session -- rolling back here makes the test see what the database actually kept.
+    db.session.rollback()
 
 
 def _make_app(**overrides):
@@ -18,7 +34,10 @@ def _make_app(**overrides):
         "WTF_CSRF_ENABLED": False,
     }
     config.update(overrides)
-    return create_app(test_config=config)
+    app = create_app(test_config=config)
+    request_started.connect(_forget_cached_user, app)
+    request_tearing_down.connect(_discard_uncommitted, app)
+    return app
 
 
 @pytest.fixture

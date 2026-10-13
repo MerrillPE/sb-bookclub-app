@@ -88,3 +88,14 @@ def test_taste_delta_none_without_overlap(client, alice, captured_templates):
     make_rating(make_book(alice), alice, 4.0)
     client.get(f"/members/{alice.id}")
     assert context_for(captured_templates, "members/profile.html")["taste_delta"] is None
+
+
+def test_missing_profile_404(client, alice):
+    assert client.get("/members/999").status_code == 404
+
+
+@pytest.mark.parametrize("length,accepted", [(80, True), (81, False)])
+def test_display_name_length_limit(client, alice, length, accepted):
+    client.post(f"/members/{alice.id}", data={"display_name": "x" * length})
+    db.session.refresh(alice)
+    assert (alice.display_name == "x" * length) is accepted
